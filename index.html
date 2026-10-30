@@ -316,11 +316,27 @@ function groupKey(){
  return (n+'_'+g+'_'+grp).replace(/\s+/g,'');
 }
 let currentGroupKey = null;
-function cargarGrupo(){
+async function cargarGrupo(){
  const k = groupKey();
  if(k === currentGroupKey) return;
  currentGroupKey = k;
- loadAlumnos(); loadRubrica(); loadImc(); loadSesiones();
+ await loadAlumnos(); await loadRubrica(); await loadImc(); await loadSesiones();
+}
+async function dbGet(key){
+ const { data: userData } = await sb.auth.getUser();
+ if(!userData || !userData.user) return null;
+ const { data, error } = await sb.from('maid_data').select('value').eq('user_id', userData.user.id).eq('storage_key', key).maybeSingle();
+ if(error || !data) return null;
+ return data.value;
+}
+async function dbSet(key, value){
+ const { data: userData } = await sb.auth.getUser();
+ if(!userData || !userData.user) return;
+ await sb.from('maid_data').upsert({ user_id: userData.user.id, storage_key: key, value: value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,storage_key' });
+}
+function debounce(fn, ms){
+ let t;
+ return function(...args){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), ms); };
 }
 function updateCapac(){
  const n=el('nivel').value,g=el('grado').value;
@@ -396,8 +412,8 @@ function renumSesiones(){
  const cards=[...el('sesionesContainer').children];
  cards.forEach((c,i)=>{ c.querySelector('.sn').textContent=i+1; });
 }
-function saveSesiones(){
- const datos = [...el('sesionesContainer').children].map(c=>({
+function recogerSesiones(){
+ return [...el('sesionesContainer').children].map(c=>({
   sesionN: c.querySelector('.sesionN').value,
   fecha: c.querySelector('.fecha').value,
   hora: c.querySelector('.hora').value,
@@ -407,12 +423,12 @@ function saveSesiones(){
   actCierre: c.querySelector('.actCierre').value,
   diarioCampo: c.querySelector('.diarioCampo').value
  }));
- try{ localStorage.setItem('maid_sesiones_'+groupKey(), JSON.stringify(datos)); }catch(e){}
 }
-function loadSesiones(){
+async function saveSesionesNow(){ await dbSet('sesiones_'+groupKey(), recogerSesiones()); }
+const saveSesiones = debounce(saveSesionesNow, 700);
+async function loadSesiones(){
  el('sesionesContainer').innerHTML=''; sesionCount=0;
- let datos=[];
- try{ const raw=localStorage.getItem('maid_sesiones_'+groupKey()); datos = raw?JSON.parse(raw):[]; }catch(e){}
+ const datos = (await dbGet('sesiones_'+groupKey())) || [];
  if(datos.length===0){ addSesion(); return; }
  datos.forEach(d=>addSesion(d));
 }
@@ -421,18 +437,14 @@ el('sesionesContainer').addEventListener('change', saveSesiones);
 
 let alumnos = [];
 function blankAlumno(){ return {nombre:'', edad:null, sexo:''}; }
-function loadAlumnos(){
- try{
-  const raw = localStorage.getItem('maid_alumnos_'+groupKey());
-  let arr = raw ? JSON.parse(raw) : [];
-  alumnos = arr.map(a => typeof a==='string' ? {nombre:a, edad:null, sexo:''} : a);
- }catch(e){ alumnos = []; }
+async function loadAlumnos(){
+ const arr = (await dbGet('alumnos_'+groupKey())) || [];
+ alumnos = arr.map(a => typeof a==='string' ? {nombre:a, edad:null, sexo:''} : a);
  if(alumnos.length===0){ for(let i=0;i<42;i++) alumnos.push(blankAlumno()); }
  renderAlumnos();
 }
-function saveAlumnos(){
- try{ localStorage.setItem('maid_alumnos_'+groupKey(), JSON.stringify(alumnos)); }catch(e){}
-}
+async function saveAlumnosNow(){ await dbSet('alumnos_'+groupKey(), alumnos); }
+const saveAlumnos = debounce(saveAlumnosNow, 700);
 function renderAlumnos(){
  const t = el('alumnosTabla');
  t.innerHTML = '<tr><th style="text-align:left;padding:4px">N°</th><th style="text-align:left;padding:4px">Nombre del alumno</th><th>Edad</th><th>Sexo</th><th></th></tr>' +
@@ -469,14 +481,12 @@ function nivelDe(v){
  return 'Alto';
 }
 let rubrica = [];
-function loadRubrica(){
- try{
-  const raw = localStorage.getItem('maid_rubrica_'+groupKey());
-  rubrica = raw ? JSON.parse(raw) : [];
- }catch(e){ rubrica = []; }
+async function loadRubrica(){
+ rubrica = (await dbGet('rubrica_'+groupKey())) || [];
  renderRubrica();
 }
-function saveRubrica(){ try{ localStorage.setItem('maid_rubrica_'+groupKey(), JSON.stringify(rubrica)); }catch(e){} }
+async function saveRubricaNow(){ await dbSet('rubrica_'+groupKey(), rubrica); }
+const saveRubrica = debounce(saveRubricaNow, 700);
 function setRub(i, campo, val){
  if(!rubrica[i]) rubrica[i]={pa:null,as:null,mp:null};
  rubrica[i][campo] = val===''? null : Math.max(1,Math.min(3, parseFloat(val)||1));
@@ -590,12 +600,13 @@ function clasificaIMC(imcVal, edad, sexo){
 }
 let imc = [];
 function blankImc(){ return {peA:null,taA:null,ciA:null,peD:null,taD:null,ciD:null}; }
-function loadImc(){
- try{ const raw=localStorage.getItem('maid_imc_'+groupKey()); imc = raw?JSON.parse(raw):[]; }catch(e){ imc=[]; }
+async function loadImc(){
+ imc = (await dbGet('imc_'+groupKey())) || [];
  while(imc.length < alumnos.length) imc.push(blankImc());
  renderImc();
 }
-function saveImc(){ try{ localStorage.setItem('maid_imc_'+groupKey(), JSON.stringify(imc)); }catch(e){} }
+async function saveImcNow(){ await dbSet('imc_'+groupKey(), imc); }
+const saveImc = debounce(saveImcNow, 700);
 function calcIMCval(peso,talla){ if(!peso||!talla) return null; return peso/((talla/100)*(talla/100)); }
 function setImc(i,campo,val){
  if(!imc[i]) imc[i]=blankImc();
@@ -731,13 +742,13 @@ async function descargarWord(){
  if(dl){ try{ await dl.save({filename:'caratula_maid_nem.docx', data: blob}); return; }catch(e){} }
  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='caratula_maid_nem.docx'; a.click();
 }
-function descargarRespaldo(){
- const data = {};
- for(let i=0;i<localStorage.length;i++){
-  const k = localStorage.key(i);
-  if(k && k.startsWith('maid_')) data[k] = localStorage.getItem(k);
- }
- const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+async function descargarRespaldo(){
+ const { data: userData } = await sb.auth.getUser();
+ if(!userData || !userData.user){ alert('Inicia sesión primero.'); return; }
+ const { data, error } = await sb.from('maid_data').select('storage_key,value').eq('user_id', userData.user.id);
+ if(error){ alert('No se pudo leer de la nube: '+error.message); return; }
+ const out = {}; (data||[]).forEach(row=>{ out[row.storage_key]=row.value; });
+ const blob = new Blob([JSON.stringify(out,null,2)], {type:'application/json'});
  const a=document.createElement('a');
  a.href=URL.createObjectURL(blob);
  a.download='respaldo_maid_'+new Date().toISOString().slice(0,10)+'.json';
@@ -746,14 +757,14 @@ function descargarRespaldo(){
 function cargarRespaldo(file){
  if(!file) return;
  const reader = new FileReader();
- reader.onload = e=>{
+ reader.onload = async e=>{
   try{
    const data = JSON.parse(e.target.result);
-   Object.keys(data).forEach(k=>{ if(k.startsWith('maid_')) localStorage.setItem(k, data[k]); });
+   for(const k of Object.keys(data)){ await dbSet(k, data[k]); }
    currentGroupKey = null;
-   cargarGrupo();
-   alert('Respaldo cargado correctamente.');
-  }catch(err){ alert('El archivo no es un respaldo válido.'); }
+   await cargarGrupo();
+   alert('Respaldo cargado correctamente a tu cuenta en la nube.');
+  }catch(err){ alert('El archivo no es un respaldo válido: '+err.message); }
  };
  reader.readAsText(file);
 }
@@ -820,6 +831,8 @@ sb.auth.onAuthStateChange((event, session) => {
  if(session){
   el('authGate').style.display='none';
   el('appWrap').style.display='block';
+  currentGroupKey = null;
+  cargarGrupo();
  } else {
   el('authGate').style.display='flex';
   el('appWrap').style.display='none';
