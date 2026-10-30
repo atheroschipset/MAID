@@ -62,6 +62,18 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
 <button type="button" onclick="authSignOut()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🔒 Cerrar sesión</button>
 </div>
 <div id="dashboardGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px"></div>
+<div class="card" style="margin-top:16px">
+<h2>Comparativa entre grupos</h2>
+<label>Filtrar por nivel</label>
+<select id="dashCompNivel" onchange="renderComparativa()">
+<option value="">Todos los niveles</option>
+<option value="preescolar">Preescolar</option>
+<option value="primaria">Primaria</option>
+<option value="secundaria">Secundaria</option>
+</select>
+<div class="info" id="comparativaInfo"></div>
+<div style="max-width:700px;margin-top:12px"><canvas id="chartComparativa"></canvas></div>
+</div>
 </div>
 </div>
 <div class="wrap" id="appWrap" style="display:none">
@@ -848,6 +860,8 @@ function actualizarIndicadores(){
  const diarioN = (typeof getDiarioEntries==='function') ? getDiarioEntries().length : 0;
  setBadge('badgeDiario', diarioN, diarioN>0?'full':'empty');
 }
+let lastDashboardGroups = {};
+let chartComparativa = null;
 async function loadDashboard(){
  const grid = el('dashboardGrid');
  grid.innerHTML = '<div class="info">Cargando tus grupos…</div>';
@@ -868,9 +882,11 @@ async function loadDashboard(){
    }
   }
  });
+ lastDashboardGroups = groups;
  const keys = Object.keys(groups).filter(k=>k.split('_').length>=3);
  if(keys.length===0){
   grid.innerHTML = '<div class="info">Aún no tienes grupos guardados. Usa "+ Nuevo grupo" para comenzar.</div>';
+  if(typeof renderComparativa==='function') renderComparativa();
   return;
  }
  keys.sort();
@@ -896,6 +912,46 @@ async function loadDashboard(){
    📋 Rúbrica: ${nRub}${totalAlum?'/'+totalAlum:''} capturada(s)${promGrupal!==null?` — promedio ${promGrupal.toFixed(2)} (${nivelDe(promGrupal)})`:''}</div>
   </div>`;
  }).join('');
+ if(typeof renderComparativa==='function') renderComparativa();
+}
+function renderComparativa(){
+ const filtro = el('dashCompNivel') ? el('dashCompNivel').value : '';
+ const keys = Object.keys(lastDashboardGroups).filter(k=>k.split('_').length>=3);
+ const nivelLabel = n=> n==='preescolar'?'Preesc.':n==='primaria'?'Prim.':n==='secundaria'?'Sec.':n;
+ const rows = keys.map(k=>{
+  const parts = k.split('_');
+  const n = parts[0], g = parts[1], grp = parts.slice(2).join('_');
+  const alumnosArr = lastDashboardGroups[k].alumnos || [];
+  const rubricaArr = lastDashboardGroups[k].rubrica || [];
+  const proms = alumnosArr.map((_,i)=>{
+   const r = rubricaArr[i];
+   if(!r || r.pa==null || r.as==null || r.mp==null) return null;
+   return (r.pa+r.as+r.mp)/3;
+  }).filter(v=>v!==null);
+  const promGrupal = proms.length? (proms.reduce((a,b)=>a+b,0)/proms.length) : null;
+  return {k, n, g, grp, promGrupal};
+ }).filter(r=> (!filtro || r.n===filtro) && r.promGrupal!==null);
+ const info = el('comparativaInfo');
+ const chartEl = el('chartComparativa');
+ if(!chartEl) return;
+ if(rows.length===0){
+  if(info) info.textContent='No hay suficientes rúbricas capturadas en estos grupos para comparar todavía.';
+  if(chartComparativa){ chartComparativa.destroy(); chartComparativa=null; }
+  return;
+ }
+ if(info) info.textContent = `Comparando ${rows.length} grupo(s) con rúbrica capturada.`;
+ rows.sort((a,b)=> b.promGrupal - a.promGrupal);
+ const labels = rows.map(r=>`${nivelLabel(r.n)} ${r.g}-${r.grp==='general'?'':r.grp}`);
+ const data = rows.map(r=>r.promGrupal);
+ const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--line');
+ const fgColor = getComputedStyle(document.documentElement).getPropertyValue('--fg');
+ const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+ const accent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent2');
+ const colors = data.map(v=> v>=2.76?'#2e8b57': v>=2.01?accent2: accent);
+ const chartData = { labels, datasets:[{ label:'Promedio rúbrica (Lente MAID)', data, backgroundColor:colors }] };
+ const chartOpts = { indexAxis:'y', scales:{ x:{ min:0, max:3, ticks:{color:fgColor}, grid:{color:gridColor} }, y:{ ticks:{color:fgColor}, grid:{display:false} } }, plugins:{ legend:{display:false}, title:{display:true, text:'Promedio de rúbrica por grupo', color:fgColor} } };
+ if(chartComparativa){ chartComparativa.data=chartData; chartComparativa.options=chartOpts; chartComparativa.update(); }
+ else { chartComparativa = new Chart(chartEl.getContext('2d'), { type:'bar', data:chartData, options:chartOpts }); }
 }
 function dashboardAbrirGrupo(key){
  const parts = key.split('_');
