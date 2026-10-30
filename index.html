@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 @media print{button,#installBtn,.tabbar,#dashboardView{display:none !important}.card{break-inside:avoid;border-color:#999}body{background:#fff;color:#000}[data-tab]{display:block !important}}
 [data-tab]{display:none}
@@ -232,7 +233,7 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
 <button type="button" onclick="addSesion()" style="margin-bottom:16px" data-tab="sesion">+ Agregar apartado de sesión</button>
 
 <button onclick="generar()" data-tab="resumen">Generar resumen para la carátula</button>
-<div class="card" id="salidaCard" data-tab="resumen"><h2>Resumen</h2><pre id="salida"></pre><button id="btnWord" onclick="descargarWord()" style="margin-top:10px">Descargar en Word (.docx)</button></div>
+<div class="card" id="salidaCard" data-tab="resumen"><h2>Resumen</h2><pre id="salida"></pre><button id="btnWord" onclick="descargarWord()" style="margin-top:10px">Descargar en Word (.docx)</button> <button id="btnExcel" onclick="descargarExcel()" style="margin-top:10px">Descargar Rúbrica e IMC (.xlsx)</button></div>
 
 <div class="card" data-tab="diario">
 <h2>Diario de campo — vista concentrada</h2>
@@ -775,6 +776,52 @@ async function descargarWord(){
  const blob = await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
  if(dl){ try{ await dl.save({filename:'caratula_maid_nem.docx', data: blob}); return; }catch(e){} }
  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='caratula_maid_nem.docx'; a.click();
+}
+function descargarExcel(){
+ if(typeof XLSX==='undefined'){ alert('No se pudo cargar el módulo de Excel. Verifica tu conexión e intenta de nuevo.'); return; }
+ const wb = XLSX.utils.book_new();
+ const rubRows = alumnos.map((a,i)=>{
+  const r = rubrica[i]||{};
+  const c = calcAlumno(r);
+  return {
+   'N°': i+1,
+   'Alumno': a.nombre||'',
+   'Participación activa': r.pa??'',
+   'Aprendizaje significativo': r.as??'',
+   'Motivación percibida': r.mp??'',
+   'Suma': c.suma??'',
+   'Promedio': c.prom!==null? +c.prom.toFixed(2) : '',
+   'Nivel': c.niv||''
+  };
+ });
+ const wsRub = XLSX.utils.json_to_sheet(rubRows);
+ XLSX.utils.book_append_sheet(wb, wsRub, 'Rubrica');
+ const imcRows = alumnos.map((a,i)=>{
+  const r = imc[i]||{};
+  const imcA = calcIMCval(r.peA,r.taA), imcD = calcIMCval(r.peD,r.taD);
+  return {
+   'N°': i+1,
+   'Alumno': a.nombre||'',
+   'Edad': a.edad??'',
+   'Sexo': a.sexo||'',
+   'Peso antes (kg)': r.peA??'',
+   'Talla antes (cm)': r.taA??'',
+   'Cintura antes (cm)': r.ciA??'',
+   'IMC antes': imcA!==null? +imcA.toFixed(1) : '',
+   'Clasificación antes': clasificaIMC(imcA, a.edad, a.sexo),
+   'Peso después (kg)': r.peD??'',
+   'Talla después (cm)': r.taD??'',
+   'Cintura después (cm)': r.ciD??'',
+   'IMC después': imcD!==null? +imcD.toFixed(1) : '',
+   'Clasificación después': clasificaIMC(imcD, a.edad, a.sexo),
+   'Δ IMC': (imcA!==null&&imcD!==null)? +(imcD-imcA).toFixed(1) : ''
+  };
+ });
+ const wsImc = XLSX.utils.json_to_sheet(imcRows);
+ XLSX.utils.book_append_sheet(wb, wsImc, 'IMC');
+ const grupoTxt = (el('gradoGrupoInfo')?el('gradoGrupoInfo').textContent:'grupo') || 'grupo';
+ const nombreArchivo = 'MAID_'+grupoTxt.replace(/[^a-zA-Z0-9-]+/g,'_')+'.xlsx';
+ XLSX.writeFile(wb, nombreArchivo);
 }
 async function descargarRespaldo(){
  const { data: userData } = await sb.auth.getUser();
