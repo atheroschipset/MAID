@@ -15,6 +15,9 @@
 #salidaCard.tab-active.generated{display:block}
 .tabbtn{background:transparent;color:var(--fg);border:1px solid var(--line);font-size:.8rem;padding:6px 10px}
 .tabbtn.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.tabBadge{display:inline-block;font-size:.65rem;background:var(--line);color:var(--fg);border-radius:999px;padding:1px 6px;margin-left:4px;opacity:.85;font-weight:bold}
+.tabBadge.full{background:#2e8b57;color:#fff;opacity:1}
+.tabBadge.empty{opacity:.5}
 :root{--bg:#faf8f4;--fg:#181625;--card:#fff;--line:#e4dfd3;--accent:#a6790a;--accent2:#6d3fc0;color-scheme:light dark;}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#07070d;--fg:#ede9e0;--card:#121018;--line:#2a2635;--accent:#d4af6a;--accent2:#8b5cf6;}}
 :root[data-theme="dark"]{--bg:#07070d;--fg:#ede9e0;--card:#121018;--line:#2a2635;--accent:#d4af6a;--accent2:#8b5cf6;}
@@ -78,11 +81,11 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
 <button type="button" class="tabbtn" onclick="showTab('curricular')">1. Marco curricular</button>
 <button type="button" class="tabbtn" onclick="showTab('contenido')">2. Contenido y ejes</button>
 <button type="button" class="tabbtn" onclick="showTab('metodologia')">3. Metodología</button>
-<button type="button" class="tabbtn" onclick="showTab('sesion')">4. Planeación</button>
-<button type="button" class="tabbtn" onclick="showTab('alumnos')">5. Alumnos y rúbrica</button>
-<button type="button" class="tabbtn" onclick="showTab('imc')">6. IMC</button>
+<button type="button" class="tabbtn" onclick="showTab('sesion')">4. Planeación <span class="tabBadge" id="badgeSesion"></span></button>
+<button type="button" class="tabbtn" onclick="showTab('alumnos')">5. Alumnos y rúbrica <span class="tabBadge" id="badgeAlumnos"></span><span class="tabBadge" id="badgeRubrica"></span></button>
+<button type="button" class="tabbtn" onclick="showTab('imc')">6. IMC <span class="tabBadge" id="badgeImc"></span></button>
 <button type="button" class="tabbtn" onclick="showTab('resumen')">7. Resumen</button>
-<button type="button" class="tabbtn" onclick="showTab('diario')">8. Diario de campo</button>
+<button type="button" class="tabbtn" onclick="showTab('diario')">8. Diario de campo <span class="tabBadge" id="badgeDiario"></span></button>
 </div>
 
 <div class="card" data-tab="curricular">
@@ -333,6 +336,7 @@ async function cargarGrupo(){
  if(k === currentGroupKey) return;
  currentGroupKey = k;
  await loadAlumnos(); await loadRubrica(); await loadImc(); await loadSesiones();
+ if(typeof actualizarIndicadores==='function') actualizarIndicadores();
 }
 async function dbGet(key){
  const { data: userData } = await sb.auth.getUser();
@@ -413,12 +417,14 @@ function addSesion(datos){
  sesionCount++;
  renumSesiones();
  saveSesiones();
+ if(typeof actualizarIndicadores==='function') actualizarIndicadores();
 }
 function removeSesion(btn){
  const card=btn.closest('[data-sesion]');
  card.remove();
  renumSesiones();
  saveSesiones();
+ if(typeof actualizarIndicadores==='function') actualizarIndicadores();
 }
 function renumSesiones(){
  const cards=[...el('sesionesContainer').children];
@@ -446,6 +452,7 @@ async function loadSesiones(){
 }
 el('sesionesContainer').addEventListener('input', saveSesiones);
 el('sesionesContainer').addEventListener('change', saveSesiones);
+el('sesionesContainer').addEventListener('input', ()=>{ if(typeof actualizarIndicadores==='function') actualizarIndicadores(); });
 
 let alumnos = [];
 function blankAlumno(){ return {nombre:'', edad:null, sexo:''}; }
@@ -471,6 +478,7 @@ function renderAlumnos(){
    </select></td>
    <td style="padding:4px"><button type="button" onclick="removeAlumno(${i})" style="background:transparent;color:var(--accent);border:1px solid var(--line);padding:2px 8px">×</button></td>
   </tr>`).join('');
+ if(typeof actualizarIndicadores==='function') actualizarIndicadores();
 }
 function syncRubricaLen(){ if(typeof rubrica!=='undefined'){ rubrica.length=alumnos.length; if(typeof renderRubrica==='function') renderRubrica(); } if(typeof imc!=='undefined'){ imc.length=alumnos.length; if(typeof renderImc==='function') renderImc(); } }
 function addAlumno(){ alumnos.push(blankAlumno()); saveAlumnos(); renderAlumnos(); syncRubricaLen(); }
@@ -543,6 +551,7 @@ function renderRubrica(){
 }
 let chartCrit=null, chartDist=null;
 function actualizarResumenRubrica(){
+ if(typeof actualizarIndicadores==='function') actualizarIndicadores();
  const vals = alumnos.map((_,i)=>calcAlumno(rubrica[i])).filter(c=>c.prom!==null);
  if(vals.length===0){ el('rubricaResumen').textContent='Aún no hay calificaciones capturadas.'; if(chartCrit){chartCrit.destroy();chartCrit=null;} if(chartDist){chartDist.destroy();chartDist=null;} return; }
  const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
@@ -668,6 +677,7 @@ function renderImc(){
 }
 let chartImc=null;
 function actualizarResumenImc(){
+ if(typeof actualizarIndicadores==='function') actualizarIndicadores();
  const datos = alumnos.map((a,i)=>{
   const r=imc[i]||blankImc();
   return { imcA:calcIMCval(r.peA,r.taA), imcD:calcIMCval(r.peD,r.taD), edad:a.edad, sexo:a.sexo };
@@ -815,6 +825,28 @@ function descargarDiarioPDF(){
   y+=6;
  });
  doc.save('diario_campo_'+(el('gradoGrupoInfo').textContent||'grupo')+'.pdf');
+}
+function setBadge(id, text, state){
+ const b = document.getElementById(id);
+ if(!b) return;
+ b.textContent = text;
+ b.className = 'tabBadge' + (state==='full' ? ' full' : state==='empty' ? ' empty' : '');
+}
+function actualizarIndicadores(){
+ const total = alumnos.length;
+ const conNombre = alumnos.filter(a=>((a&&a.nombre)||'').trim()!=='').length;
+ setBadge('badgeAlumnos', '👤'+conNombre+'/'+total, total>0 && conNombre===total ? 'full' : (conNombre===0?'empty':''));
+ const rubOk = alumnos.map((_,i)=>calcAlumno(rubrica[i])).filter(c=>c.prom!==null).length;
+ setBadge('badgeRubrica', '📋'+rubOk+'/'+total, total>0 && rubOk===total ? 'full' : (rubOk===0?'empty':''));
+ const imcAntes = alumnos.map((_,i)=>{const r=imc[i]||{}; return calcIMCval(r.peA,r.taA);}).filter(v=>v!==null).length;
+ const imcDespues = alumnos.map((_,i)=>{const r=imc[i]||{}; return calcIMCval(r.peD,r.taD);}).filter(v=>v!==null).length;
+ const imcFull = total>0 && imcAntes===total && imcDespues===total;
+ const imcEmpty = imcAntes===0 && imcDespues===0;
+ setBadge('badgeImc', imcAntes+'/'+total+' · '+imcDespues+'/'+total, imcFull?'full':(imcEmpty?'empty':''));
+ const sesionesN = document.querySelectorAll('#sesionesContainer [data-sesion]').length;
+ setBadge('badgeSesion', sesionesN, sesionesN>0?'full':'empty');
+ const diarioN = (typeof getDiarioEntries==='function') ? getDiarioEntries().length : 0;
+ setBadge('badgeDiario', diarioN, diarioN>0?'full':'empty');
 }
 async function loadDashboard(){
  const grid = el('dashboardGrid');
