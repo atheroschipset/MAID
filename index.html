@@ -1089,7 +1089,11 @@ async function authSignUp(){
 async function authSignOut(){ await sb.auth.signOut(); }
 async function mostrarSegunLicencia(){
  const lg = el('licGate');
- const { data, error } = await sb.rpc('licencia_estado');
+ let data, error;
+ try{
+  const r = await sb.rpc('licencia_estado');
+  data = r.data; error = r.error;
+ }catch(e){ error = e; }
  if(error || !data || !data.valida){
   el('appWrap').style.display='none';
   document.getElementById('dashboardView').style.display='none';
@@ -1099,6 +1103,7 @@ async function mostrarSegunLicencia(){
    let msg = 'Necesitas un código de licencia válido para usar MAID.';
    if(motivo==='vencida') msg = 'Tu licencia venció el ' + data.fecha_fin + '. Ingresa un nuevo código para el siguiente ciclo escolar.';
    if(motivo==='inactiva') msg = 'Tu licencia fue desactivada. Contacta al administrador.';
+   if(error && !data) msg = 'No se pudo verificar tu licencia (revisa tu conexión a internet) e intenta de nuevo, o ingresa tu código.';
    const m = el('licGateMsg'); if(m) m.textContent = msg;
   }
  } else {
@@ -1127,12 +1132,14 @@ async function canjearLicenciaDesdeGate(){
 sb.auth.onAuthStateChange(async (event, session) => {
  if(session){
   el('authGate').style.display='none';
-  let codigoPend = null;
-  try{ codigoPend = localStorage.getItem('maid_codigo_pendiente'); }catch(e){}
-  if(codigoPend){
-   const r = await sb.rpc('canjear_licencia', { p_codigo: codigoPend });
-   if(!r.error && r.data && r.data.ok){ try{ localStorage.removeItem('maid_codigo_pendiente'); }catch(e){} }
-  }
+  try{
+   let codigoPend = null;
+   try{ codigoPend = localStorage.getItem('maid_codigo_pendiente'); }catch(e){}
+   if(codigoPend){
+    const r = await sb.rpc('canjear_licencia', { p_codigo: codigoPend });
+    if(!r.error && r.data && r.data.ok){ try{ localStorage.removeItem('maid_codigo_pendiente'); }catch(e){} }
+   }
+  }catch(e){}
   await mostrarSegunLicencia();
  } else {
   el('authGate').style.display='flex';
