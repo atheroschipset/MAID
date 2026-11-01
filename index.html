@@ -51,10 +51,24 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
    <input type="password" id="authPass" placeholder="••••••••" style="padding-right:38px">
    <button type="button" id="togglePassBtn" onclick="togglePass()" aria-label="Mostrar contraseña" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--accent);padding:6px 8px;font-size:1.05rem;cursor:pointer">👁️</button>
   </div>
+  <label>Código de licencia <span style="font-weight:normal;opacity:.7">(solo al crear cuenta nueva)</span></label>
+  <input type="text" id="authCodigo" placeholder="Ej. MAID-2026-XXXX" autocapitalize="characters">
   <div class="info" id="authMsg" style="display:none"></div>
   <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
    <button type="button" onclick="authSignIn()">Iniciar sesión</button>
    <button type="button" onclick="authSignUp()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">Crear cuenta</button>
+  </div>
+ </div>
+</div>
+<div id="licGate" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px">
+ <div class="card" style="max-width:380px;width:100%">
+  <h2>Licencia de MAID</h2>
+  <div class="info" id="licGateMsg">Necesitas un código de licencia válido para usar MAID.</div>
+  <label>Código de licencia</label>
+  <input type="text" id="licCodigoInput" placeholder="Ej. MAID-2026-XXXX" autocapitalize="characters">
+  <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+   <button type="button" onclick="canjearLicenciaDesdeGate()">Activar licencia</button>
+   <button type="button" onclick="authSignOut()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🔒 Cerrar sesión</button>
   </div>
  </div>
 </div>
@@ -1059,21 +1073,72 @@ async function authSignIn(){
  if(error) authMsg(error.message, false);
 }
 async function authSignUp(){
- const { error } = await sb.auth.signUp({ email: el('authEmail').value, password: el('authPass').value });
- if(error) authMsg(error.message, false);
- else authMsg('Cuenta creada. Revisa tu correo si se pide confirmación, luego inicia sesión.', true);
+ const codigo = el('authCodigo').value.trim();
+ if(!codigo){ authMsg('Ingresa tu código de licencia para crear la cuenta.', false); return; }
+ const { data, error } = await sb.auth.signUp({ email: el('authEmail').value, password: el('authPass').value });
+ if(error){ authMsg(error.message, false); return; }
+ if(data && data.session){
+  const r = await sb.rpc('canjear_licencia', { p_codigo: codigo });
+  if(r.error || !r.data || !r.data.ok){ authMsg('Cuenta creada, pero el código de licencia no es válido. Verifica el código o contacta a soporte.', false); }
+  else { authMsg('Cuenta creada y licencia activada correctamente.', true); }
+ } else {
+  try{ localStorage.setItem('maid_codigo_pendiente', codigo); }catch(e){}
+  authMsg('Cuenta creada. Revisa tu correo para confirmar, luego inicia sesión para activar tu licencia.', true);
+ }
 }
 async function authSignOut(){ await sb.auth.signOut(); }
-sb.auth.onAuthStateChange((event, session) => {
- if(session){
-  el('authGate').style.display='none';
+async function mostrarSegunLicencia(){
+ const lg = el('licGate');
+ const { data, error } = await sb.rpc('licencia_estado');
+ if(error || !data || !data.valida){
   el('appWrap').style.display='none';
+  document.getElementById('dashboardView').style.display='none';
+  if(lg){
+   lg.style.display='flex';
+   const motivo = data && data.motivo;
+   let msg = 'Necesitas un código de licencia válido para usar MAID.';
+   if(motivo==='vencida') msg = 'Tu licencia venció el ' + data.fecha_fin + '. Ingresa un nuevo código para el siguiente ciclo escolar.';
+   if(motivo==='inactiva') msg = 'Tu licencia fue desactivada. Contacta al administrador.';
+   const m = el('licGateMsg'); if(m) m.textContent = msg;
+  }
+ } else {
+  if(lg) lg.style.display='none';
   document.getElementById('dashboardView').style.display='block';
   loadDashboard();
+ }
+}
+async function canjearLicenciaDesdeGate(){
+ const codigo = el('licCodigoInput').value.trim();
+ const m = el('licGateMsg');
+ if(!codigo){ if(m) m.textContent='Escribe tu código de licencia.'; return; }
+ const { data, error } = await sb.rpc('canjear_licencia', { p_codigo: codigo });
+ if(error || !data || !data.ok){
+  const motivo = data && data.motivo;
+  let txt = 'No se pudo validar el código.';
+  if(motivo==='no_existe') txt='Ese código no existe. Verifica que esté bien escrito.';
+  if(motivo==='ya_usado') txt='Ese código ya fue usado por otra cuenta.';
+  if(motivo==='inactiva') txt='Ese código está desactivado.';
+  if(motivo==='vencida') txt='Ese código ya venció.';
+  if(m) m.textContent = txt;
+  return;
+ }
+ await mostrarSegunLicencia();
+}
+sb.auth.onAuthStateChange(async (event, session) => {
+ if(session){
+  el('authGate').style.display='none';
+  let codigoPend = null;
+  try{ codigoPend = localStorage.getItem('maid_codigo_pendiente'); }catch(e){}
+  if(codigoPend){
+   const r = await sb.rpc('canjear_licencia', { p_codigo: codigoPend });
+   if(!r.error && r.data && r.data.ok){ try{ localStorage.removeItem('maid_codigo_pendiente'); }catch(e){} }
+  }
+  await mostrarSegunLicencia();
  } else {
   el('authGate').style.display='flex';
   el('appWrap').style.display='none';
   document.getElementById('dashboardView').style.display='none';
+  const lg = el('licGate'); if(lg) lg.style.display='none';
  }
 });
 function togglePass(){
