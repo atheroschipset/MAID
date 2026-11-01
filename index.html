@@ -936,10 +936,14 @@ let chartComparativa = null;
 async function loadDashboard(){
  const grid = el('dashboardGrid');
  grid.innerHTML = '<div class="info">Cargando tus grupos…</div>';
- const { data: userData } = await sb.auth.getUser();
- if(!userData || !userData.user) return;
- const { data, error } = await sb.from('maid_data').select('storage_key,value').eq('user_id', userData.user.id);
- if(error){ grid.innerHTML = '<div class="info">No se pudieron cargar tus grupos.</div>'; return; }
+ let data, error;
+ try{
+  const { data: userData } = await conTiempoLimite(sb.auth.getUser(), 8000);
+  if(!userData || !userData.user) return;
+  const r = await conTiempoLimite(sb.from('maid_data').select('storage_key,value').eq('user_id', userData.user.id), 8000);
+  data = r.data; error = r.error;
+ }catch(e){ error = e; }
+ if(error){ grid.innerHTML = '<div class="info">No se pudieron cargar tus grupos. Revisa tu conexión a internet y desliza para actualizar.</div>'; return; }
  const groups = {};
  const prefixes = ['alumnos_','rubrica_','imc_','sesiones_'];
  (data||[]).forEach(row=>{
@@ -1067,6 +1071,12 @@ function showTab(name){
 const SUPA_URL = 'https://kpeftmcawokbhxwtnnsw.supabase.co';
 const SUPA_KEY = 'sb_publishable_DUkTNSNl7L5F4mUw973IDA_hgYDT42y';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+function conTiempoLimite(promesa, ms){
+ return Promise.race([
+  promesa,
+  new Promise((_, reject) => setTimeout(() => reject(new Error('tiempo_agotado')), ms))
+ ]);
+}
 function authMsg(text, ok){ const m=el('authMsg'); m.style.display='block'; m.textContent=text; m.style.borderLeftColor= ok?'#2e8b57':'#b33'; }
 async function authSignIn(){
  const { error } = await sb.auth.signInWithPassword({ email: el('authEmail').value, password: el('authPass').value });
@@ -1091,7 +1101,7 @@ async function mostrarSegunLicencia(){
  const lg = el('licGate');
  let data, error;
  try{
-  const r = await sb.rpc('licencia_estado');
+  const r = await conTiempoLimite(sb.rpc('licencia_estado'), 8000);
   data = r.data; error = r.error;
  }catch(e){ error = e; }
  if(error || !data || !data.valida){
@@ -1116,10 +1126,15 @@ async function canjearLicenciaDesdeGate(){
  const codigo = el('licCodigoInput').value.trim();
  const m = el('licGateMsg');
  if(!codigo){ if(m) m.textContent='Escribe tu código de licencia.'; return; }
- const { data, error } = await sb.rpc('canjear_licencia', { p_codigo: codigo });
+ if(m) m.textContent='Verificando…';
+ let data, error;
+ try{
+  const r = await conTiempoLimite(sb.rpc('canjear_licencia', { p_codigo: codigo }), 8000);
+  data = r.data; error = r.error;
+ }catch(e){ error = e; }
  if(error || !data || !data.ok){
   const motivo = data && data.motivo;
-  let txt = 'No se pudo validar el código.';
+  let txt = 'No se pudo validar el código. Revisa tu conexión a internet e intenta de nuevo.';
   if(motivo==='no_existe') txt='Ese código no existe. Verifica que esté bien escrito.';
   if(motivo==='ya_usado') txt='Ese código ya fue usado por otra cuenta.';
   if(motivo==='inactiva') txt='Ese código está desactivado.';
@@ -1136,7 +1151,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
    let codigoPend = null;
    try{ codigoPend = localStorage.getItem('maid_codigo_pendiente'); }catch(e){}
    if(codigoPend){
-    const r = await sb.rpc('canjear_licencia', { p_codigo: codigoPend });
+    const r = await conTiempoLimite(sb.rpc('canjear_licencia', { p_codigo: codigoPend }), 8000);
     if(!r.error && r.data && r.data.ok){ try{ localStorage.removeItem('maid_codigo_pendiente'); }catch(e){} }
    }
   }catch(e){}
