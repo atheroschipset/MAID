@@ -2,7 +2,8 @@
 <html lang="es"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MAID · Generador de Carátula NEM</title>
-<meta name="theme-color" content="#6b4f3a">
+<meta name="theme-color" content="#7a3fc9">
+<link rel="manifest" href="manifest.json">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -19,9 +20,9 @@
 .tabBadge{display:inline-block;font-size:.65rem;background:var(--line);color:var(--fg);border-radius:999px;padding:1px 6px;margin-left:4px;opacity:.85;font-weight:bold}
 .tabBadge.full{background:#2e8b57;color:#fff;opacity:1}
 .tabBadge.empty{opacity:.5}
-:root{--bg:#faf8f4;--fg:#181625;--card:#fff;--line:#e4dfd3;--accent:#a6790a;--accent2:#6d3fc0;color-scheme:light dark;}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#07070d;--fg:#ede9e0;--card:#121018;--line:#2a2635;--accent:#d4af6a;--accent2:#8b5cf6;}}
-:root[data-theme="dark"]{--bg:#07070d;--fg:#ede9e0;--card:#121018;--line:#2a2635;--accent:#d4af6a;--accent2:#8b5cf6;}
+:root{--bg:#faf7ff;--fg:#211334;--card:#fff;--line:#e7defa;--accent:#7a3fc9;--accent2:#e0a62a;color-scheme:light dark;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#140c22;--fg:#f1e9fb;--card:#1e1333;--line:#3a2a54;--accent:#b386e8;--accent2:#f0c15a;}}
+:root[data-theme="dark"]{--bg:#140c22;--fg:#f1e9fb;--card:#1e1333;--line:#3a2a54;--accent:#b386e8;--accent2:#f0c15a;}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:Georgia,'Times New Roman',serif;padding:env(safe-area-inset-top,0) 16px env(safe-area-inset-bottom,0);}
 .wrap{max-width:820px;margin:0 auto;padding:24px 0 60px}
@@ -46,7 +47,10 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
   <label>Correo</label>
   <input type="email" id="authEmail" placeholder="tucorreo@ejemplo.com">
   <label>Contraseña</label>
-  <input type="password" id="authPass" placeholder="••••••••">
+  <div style="position:relative">
+   <input type="password" id="authPass" placeholder="••••••••" style="padding-right:38px">
+   <button type="button" id="togglePassBtn" onclick="togglePass()" aria-label="Mostrar contraseña" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--accent);padding:6px 8px;font-size:1.05rem;cursor:pointer">👁️</button>
+  </div>
   <div class="info" id="authMsg" style="display:none"></div>
   <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
    <button type="button" onclick="authSignIn()">Iniciar sesión</button>
@@ -83,6 +87,7 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
 <div class="sub">Selecciona nivel y grado: los campos curriculares se llenan con base en la NEM.</div>
 <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
 <button type="button" onclick="volverTablero()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🏠 Tablero</button>
+<button type="button" onclick="buscarActualizacion()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🔄 Buscar actualización</button>
 <button type="button" onclick="window.print()">🖨️ Imprimir</button>
 <button type="button" onclick="descargarRespaldo()">📥 Descargar respaldo</button>
 <button type="button" onclick="document.getElementById('restoreFile').click()">📤 Cargar respaldo</button>
@@ -240,6 +245,11 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
 <div class="info">Todas las entradas de diario de las sesiones de este Grado-Grupo, juntas y en orden.</div>
 <div id="diarioLista" style="margin-top:10px"></div>
 <button type="button" onclick="descargarDiarioPDF()" style="margin-top:12px">📄 Descargar PDF del diario</button>
+</div>
+
+<div id="updateBanner" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--accent);color:var(--bg);padding:10px max(16px,env(safe-area-inset-left,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right,0px));align-items:center;justify-content:space-between;gap:10px;font-family:inherit;flex-wrap:wrap">
+ <span>🔄 Hay una nueva versión de MAID disponible.</span>
+ <button type="button" onclick="location.reload()" style="background:var(--bg);color:var(--accent);border:none;padding:6px 14px;border-radius:6px;font-weight:bold">Actualizar ahora</button>
 </div>
 
 <script>
@@ -1066,6 +1076,45 @@ sb.auth.onAuthStateChange((event, session) => {
   document.getElementById('dashboardView').style.display='none';
  }
 });
+function togglePass(){
+ const inp = el('authPass');
+ const btn = el('togglePassBtn');
+ if(!inp||!btn) return;
+ if(inp.type==='password'){ inp.type='text'; btn.textContent='🙈'; btn.setAttribute('aria-label','Ocultar contraseña'); }
+ else { inp.type='password'; btn.textContent='👁️'; btn.setAttribute('aria-label','Mostrar contraseña'); }
+}
+let swRegGlobal = null;
+function mostrarBannerActualizacion(){
+ const b = document.getElementById('updateBanner');
+ if(b) b.style.display='flex';
+}
+async function buscarActualizacion(){
+ if(!('serviceWorker' in navigator)){ alert('Este navegador no soporta actualizaciones automáticas. Cierra y vuelve a abrir la app para obtener la última versión.'); return; }
+ try{
+  const reg = swRegGlobal || await navigator.serviceWorker.getRegistration();
+  if(!reg){ location.reload(); return; }
+  await reg.update();
+  setTimeout(()=>{
+   const b = document.getElementById('updateBanner');
+   if(!b || b.style.display!=='flex'){ alert('Ya tienes la versión más reciente de MAID.'); }
+  }, 1200);
+ }catch(e){ alert('No se pudo buscar actualizaciones. Revisa tu conexión.'); }
+}
+if('serviceWorker' in navigator){
+ window.addEventListener('load', ()=>{
+  navigator.serviceWorker.register('sw.js').then(reg=>{
+   swRegGlobal = reg;
+   reg.addEventListener('updatefound', ()=>{
+    const nw = reg.installing;
+    if(!nw) return;
+    nw.addEventListener('statechange', ()=>{
+     if(nw.state==='activated' && navigator.serviceWorker.controller) mostrarBannerActualizacion();
+    });
+   });
+  }).catch(()=>{});
+  navigator.serviceWorker.addEventListener('controllerchange', mostrarBannerActualizacion);
+ });
+}
 showTab('curricular');
 cargarGrupo();
 </script>
