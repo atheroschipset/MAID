@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solicitar licencia MAID</title>
+<style>
+ :root{--bg:#faf7ff;--fg:#211334;--card:#fff;--line:#e7defa;--accent:#7a3fc9;--accent2:#e0a62a;--ok:#2e8b57}
+ @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#140c22;--fg:#f1e9fb;--card:#1e1333;--line:#3a2a54;--accent:#b386e8;--accent2:#f0c15a}}
+ *{box-sizing:border-box}
+ body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:28px 16px 60px}
+ .wrap{max-width:460px;margin:0 auto}
+ h1{font-size:1.4rem;margin:0 0 4px}
+ .sub{opacity:.75;font-size:.9rem;margin-bottom:20px;line-height:1.5}
+ .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px}
+ .card h2{margin:0 0 10px;font-size:1.05rem;color:var(--accent)}
+ .precio{font-size:1.8rem;font-weight:800;color:var(--accent);margin:4px 0 10px}
+ .datos-pago{font-family:ui-monospace,Consolas,monospace;font-size:.88rem;line-height:1.9;background:var(--bg);border:1px dashed var(--line);border-radius:8px;padding:12px}
+ .datos-pago b{font-family:system-ui,sans-serif;font-weight:600;display:inline-block;min-width:92px}
+ label{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
+ input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg);font-size:.95rem;font-family:inherit}
+ textarea{resize:vertical;min-height:60px}
+ button{width:100%;margin-top:16px;cursor:pointer;border:none;border-radius:8px;padding:12px 16px;font-weight:700;font-size:1rem;background:var(--accent);color:#fff}
+ button:disabled{opacity:.5;cursor:default}
+ .msg{font-size:.85rem;margin-top:12px;padding:10px 12px;border-radius:8px;display:none;line-height:1.5}
+ .msg.ok{display:block;background:#2e8b5722;color:var(--ok)}
+ .msg.err{display:block;background:#c23b3b22;color:#c23b3b}
+ .nota{font-size:.78rem;opacity:.65;margin-top:14px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <h1>Solicitar licencia de MAID</h1>
+ <div class="sub">Herramienta de planeación y evaluación para Educación Física — rúbrica, IMC, sesiones y diario, todo en una app.</div>
+
+ <div class="card">
+  <h2>Precio</h2>
+  <div class="precio">$300 MXN <span style="font-size:.95rem;font-weight:400;opacity:.7">/ ciclo escolar</span></div>
+  <p style="font-size:.85rem;opacity:.8;margin:0 0 10px">Haz tu transferencia a estos datos:</p>
+  <div class="datos-pago">
+<b>Banco:</b> BBVA<br>
+<b>Tarjeta:</b> 4152 3145 0071 3550<br>
+<b>CLABE:</b> 012760015976085207<br>
+<b>A nombre de:</b> Carlos Emmanuel Arana Solorio
+  </div>
+ </div>
+
+ <div class="card">
+  <h2>Tus datos</h2>
+  <form id="formSolicitud">
+   <label>Nombre completo</label>
+   <input type="text" id="fNombre" required>
+   <label>Correo (con este vas a crear tu cuenta en MAID)</label>
+   <input type="email" id="fCorreo" required>
+   <label>Escuela (opcional)</label>
+   <input type="text" id="fEscuela">
+   <label>Ciclo escolar</label>
+   <input type="text" id="fCiclo" placeholder="2026-2027" required>
+   <label>Notas (opcional — ej. ya hice la transferencia hoy a las 3pm)</label>
+   <textarea id="fNotas"></textarea>
+   <button type="submit" id="btnEnviar">Enviar solicitud</button>
+  </form>
+  <div class="msg" id="msg"></div>
+ </div>
+
+ <p class="nota">Después de confirmar tu pago, te haremos llegar tu código de licencia al correo que escribiste arriba para que puedas crear tu cuenta en MAID.</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SUPA_URL = 'https://kpeftmcawokbhxwtnnsw.supabase.co';
+const SUPA_KEY = 'sb_publishable_DUkTNSNl7L5F4mUw973IDA_hgYDT42y';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+function conTiempoLimite(promesa, ms){
+ return Promise.race([
+  promesa,
+  new Promise((_, reject) => setTimeout(() => reject(new Error('tiempo_agotado')), ms))
+ ]);
+}
+document.getElementById('formSolicitud').addEventListener('submit', async (e)=>{
+ e.preventDefault();
+ const btn = document.getElementById('btnEnviar');
+ const msg = document.getElementById('msg');
+ const nombre = document.getElementById('fNombre').value.trim();
+ const correo = document.getElementById('fCorreo').value.trim();
+ const escuela = document.getElementById('fEscuela').value.trim();
+ const ciclo = document.getElementById('fCiclo').value.trim();
+ const notas = document.getElementById('fNotas').value.trim();
+ if(!nombre || !correo || !ciclo){
+  msg.className='msg err'; msg.textContent='Completa nombre, correo y ciclo escolar.'; return;
+ }
+ btn.disabled = true; btn.textContent = 'Enviando…';
+ try{
+  const { error } = await conTiempoLimite(sb.from('solicitudes_licencia').insert({
+   nombre, correo, escuela: escuela || null, ciclo, notas: notas || null
+  }), 8000);
+  if(error){
+   msg.className='msg err'; msg.textContent='No se pudo enviar tu solicitud. Revisa tu conexión e intenta de nuevo.';
+   btn.disabled = false; btn.textContent = 'Enviar solicitud';
+   return;
+  }
+  msg.className='msg ok'; msg.textContent='¡Listo! Recibimos tu solicitud. En cuanto confirmemos tu pago te mandamos tu código de licencia al correo que diste.';
+  document.getElementById('formSolicitud').reset();
+  btn.textContent = 'Solicitud enviada ✓';
+ }catch(err){
+  msg.className='msg err'; msg.textContent='No se pudo enviar tu solicitud (tiempo agotado). Revisa tu conexión e intenta de nuevo.';
+  btn.disabled = false; btn.textContent = 'Enviar solicitud';
+ }
+});
+</script>
+</body>
+</html>
