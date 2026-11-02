@@ -1140,6 +1140,16 @@ function conTiempoLimite(promesa, ms){
  ]);
 }
 function authMsg(text, ok){ const m=el('authMsg'); m.style.display='block'; m.textContent=text; m.style.borderLeftColor= ok?'#2e8b57':'#b33'; }
+function getDeviceId(){
+ try{
+  let id = localStorage.getItem('maid_device_id');
+  if(!id){
+   id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('dev-'+Date.now()+'-'+Math.random().toString(36).slice(2));
+   localStorage.setItem('maid_device_id', id);
+  }
+  return id;
+ }catch(e){ return 'dev-sin-almacenamiento'; }
+}
 async function authSignIn(){
  const { error } = await sb.auth.signInWithPassword({ email: el('authEmail').value, password: el('authPass').value });
  if(error) authMsg(error.message, false);
@@ -1150,8 +1160,13 @@ async function authSignUp(){
  const { data, error } = await sb.auth.signUp({ email: el('authEmail').value, password: el('authPass').value });
  if(error){ authMsg(error.message, false); return; }
  if(data && data.session){
-  const r = await sb.rpc('canjear_licencia', { p_codigo: codigo });
-  if(r.error || !r.data || !r.data.ok){ authMsg('Cuenta creada, pero el código de licencia no es válido. Verifica el código o contacta a soporte.', false); }
+  const r = await sb.rpc('canjear_licencia', { p_codigo: codigo, p_device_id: getDeviceId() });
+  if(r.error || !r.data || !r.data.ok){
+   const motivo = r.data && r.data.motivo;
+   let txt = 'Cuenta creada, pero el código de licencia no es válido. Verifica el código o contacta a soporte.';
+   if(motivo==='ya_usado') txt = 'Cuenta creada, pero ese código ya fue usado por otra cuenta.';
+   authMsg(txt, false);
+  }
   else { authMsg('Cuenta creada y licencia activada correctamente.', true); }
  } else {
   try{ localStorage.setItem('maid_codigo_pendiente', codigo); }catch(e){}
@@ -1163,7 +1178,7 @@ async function mostrarSegunLicencia(){
  const lg = el('licGate');
  let data, error;
  try{
-  const r = await conTiempoLimite(sb.rpc('licencia_estado'), 8000);
+  const r = await conTiempoLimite(sb.rpc('licencia_estado', { p_device_id: getDeviceId() }), 8000);
   data = r.data; error = r.error;
  }catch(e){ error = e; }
  if(error || !data || !data.valida){
@@ -1175,6 +1190,7 @@ async function mostrarSegunLicencia(){
    let msg = 'Necesitas un código de licencia válido para usar MAID.';
    if(motivo==='vencida') msg = 'Tu licencia venció el ' + data.fecha_fin + '. Ingresa un nuevo código para el siguiente ciclo escolar.';
    if(motivo==='inactiva') msg = 'Tu licencia fue desactivada. Contacta al administrador.';
+   if(motivo==='otro_dispositivo') msg = 'Tu licencia ya está activa en otro dispositivo. Cada licencia solo se puede usar en un dispositivo. Si cambiaste de celular, contacta al administrador para reasignarla.';
    if(error && !data) msg = 'No se pudo verificar tu licencia (revisa tu conexión a internet) e intenta de nuevo, o ingresa tu código.';
    const m = el('licGateMsg'); if(m) m.textContent = msg;
   }
@@ -1191,7 +1207,7 @@ async function canjearLicenciaDesdeGate(){
  if(m) m.textContent='Verificando…';
  let data, error;
  try{
-  const r = await conTiempoLimite(sb.rpc('canjear_licencia', { p_codigo: codigo }), 8000);
+  const r = await conTiempoLimite(sb.rpc('canjear_licencia', { p_codigo: codigo, p_device_id: getDeviceId() }), 8000);
   data = r.data; error = r.error;
  }catch(e){ error = e; }
  if(error || !data || !data.ok){
@@ -1213,7 +1229,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
    let codigoPend = null;
    try{ codigoPend = localStorage.getItem('maid_codigo_pendiente'); }catch(e){}
    if(codigoPend){
-    const r = await conTiempoLimite(sb.rpc('canjear_licencia', { p_codigo: codigoPend }), 8000);
+    const r = await conTiempoLimite(sb.rpc('canjear_licencia', { p_codigo: codigoPend, p_device_id: getDeviceId() }), 8000);
     if(!r.error && r.data && r.data.ok){ try{ localStorage.removeItem('maid_codigo_pendiente'); }catch(e){} }
    }
   }catch(e){}
