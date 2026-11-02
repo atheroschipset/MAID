@@ -72,6 +72,15 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
   </div>
  </div>
 </div>
+<div id="deviceLockModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:20px">
+ <div class="card" style="max-width:380px;width:100%;text-align:center">
+  <div style="font-size:2.2rem;margin-bottom:6px">📵</div>
+  <h2 style="margin-top:0">Licencia en otro dispositivo</h2>
+  <p style="font-size:.9rem;line-height:1.5;opacity:.9">Tu cuenta de MAID ya está activada en otro dispositivo. Cada licencia solo puede usarse en uno a la vez.</p>
+  <p style="font-size:.9rem;line-height:1.5;font-weight:600">Por favor comunícate con el desarrollador de la app para resolver tu caso.</p>
+  <div style="margin-top:14px"><button type="button" onclick="document.getElementById('deviceLockModal').style.display='none'">Entendido</button></div>
+ </div>
+</div>
 <div id="dashboardView" style="display:none">
 <div class="wrap">
 <h1>Tablero general</h1>
@@ -1190,7 +1199,7 @@ async function mostrarSegunLicencia(){
    let msg = 'Necesitas un código de licencia válido para usar MAID.';
    if(motivo==='vencida') msg = 'Tu licencia venció el ' + data.fecha_fin + '. Ingresa un nuevo código para el siguiente ciclo escolar.';
    if(motivo==='inactiva') msg = 'Tu licencia fue desactivada. Contacta al administrador.';
-   if(motivo==='otro_dispositivo') msg = 'Tu licencia ya está activa en otro dispositivo. Cada licencia solo se puede usar en un dispositivo. Si cambiaste de celular, contacta al administrador para reasignarla.';
+   if(motivo==='otro_dispositivo'){ msg = 'Tu licencia está activa en otro dispositivo. Comunícate con el desarrollador para resolver tu caso.'; const dm=el('deviceLockModal'); if(dm) dm.style.display='flex'; }
    if(error && !data) msg = 'No se pudo verificar tu licencia (revisa tu conexión a internet) e intenta de nuevo, o ingresa tu código.';
    const m = el('licGateMsg'); if(m) m.textContent = msg;
   }
@@ -1217,6 +1226,7 @@ async function canjearLicenciaDesdeGate(){
   if(motivo==='ya_usado') txt='Ese código ya fue usado por otra cuenta.';
   if(motivo==='inactiva') txt='Ese código está desactivado.';
   if(motivo==='vencida') txt='Ese código ya venció.';
+  if(motivo==='otro_dispositivo'){ txt='Ese código ya está activo en otro dispositivo. Comunícate con el desarrollador para resolver tu caso.'; const dm=el('deviceLockModal'); if(dm) dm.style.display='flex'; }
   if(m) m.textContent = txt;
   return;
  }
