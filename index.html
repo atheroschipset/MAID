@@ -221,6 +221,11 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
 <div class="card" data-tab="alumnos">
 <h2>9. Rúbrica de evaluación — Lente MAID</h2>
 <div class="info">Escala 1 a 3. Toma los nombres directo de la Lista de alumnos. Se guarda sola en este dispositivo.</div>
+<div style="margin:10px 0">
+ <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:6px">Criterios que evalúas en esta rúbrica</label>
+ <div id="criteriosChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+ <button type="button" onclick="agregarCriterio()">+ Agregar criterio</button>
+</div>
 <div style="overflow-x:auto">
 <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:.85rem" id="rubricaTabla"></table>
 </div>
@@ -387,6 +392,26 @@ async function dbSet(key, value){
  if(!userData || !userData.user) return;
  await sb.from('maid_data').upsert({ user_id: userData.user.id, storage_key: key, value: value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,storage_key' });
 }
+async function dbDeleteGroup(groupSuffix){
+ const { data: userData } = await sb.auth.getUser();
+ if(!userData || !userData.user) return;
+ const prefixes = ['alumnos_','rubrica_','imc_','sesiones_','criterios_'];
+ const keys = prefixes.map(p=>p+groupSuffix);
+ await sb.from('maid_data').delete().eq('user_id', userData.user.id).in('storage_key', keys);
+}
+async function dashboardEliminarGrupo(key){
+ const parts = key.split('_');
+ const n = parts[0], g = parts[1], grp = parts.slice(2).join('_');
+ const nivelLabel = n==='preescolar'?'Preescolar':n==='primaria'?'Primaria':n==='secundaria'?'Secundaria':n;
+ if(!confirm(`¿Eliminar el grupo "${nivelLabel} · ${g} — ${grp==='general'?'(sin grupo)':grp}"?\n\nSe borrarán sus alumnos, rúbrica, IMC y sesiones. Esto no se puede deshacer.`)) return;
+ try{
+  await conTiempoLimite(dbDeleteGroup(key), 8000);
+  if(key === currentGroupKey) currentGroupKey = null;
+  await loadDashboard();
+ }catch(e){
+  alert('No se pudo eliminar el grupo. Revisa tu conexión e intenta de nuevo.');
+ }
+}
 function debounce(fn, ms){
  let t;
  return function(...args){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), ms); };
@@ -537,24 +562,60 @@ function nivelDe(v){
  if(v<=2.75) return 'Medio-alto';
  return 'Alto';
 }
+const CRITERIOS_DEFECTO = [
+ {id:'pa', label:'Part. activa'},
+ {id:'as', label:'Aprend. signif.'},
+ {id:'mp', label:'Motiv. percibida'}
+];
 let rubrica = [];
+let criterios = [];
 async function loadRubrica(){
  rubrica = (await dbGet('rubrica_'+groupKey())) || [];
+ criterios = (await dbGet('criterios_'+groupKey())) || CRITERIOS_DEFECTO.map(c=>({...c}));
+ renderCriteriosChips();
  renderRubrica();
 }
 async function saveRubricaNow(){ await dbSet('rubrica_'+groupKey(), rubrica); }
 const saveRubrica = debounce(saveRubricaNow, 700);
+async function saveCriteriosNow(){ await dbSet('criterios_'+groupKey(), criterios); }
+const saveCriterios = debounce(saveCriteriosNow, 700);
+
+function renderCriteriosChips(){
+ const cont = el('criteriosChips');
+ if(!cont) return;
+ cont.innerHTML = criterios.map(c=>
+  `<span class="chip" style="cursor:default;display:inline-flex;align-items:center;gap:6px">${c.label}<button type="button" onclick="quitarCriterio('${c.id}')" title="Quitar criterio" style="background:none;border:none;color:inherit;cursor:pointer;font-size:.9rem;line-height:1;padding:0">✕</button></span>`
+ ).join('') || '<span class="info" style="margin:0">Sin criterios — agrega al menos uno.</span>';
+}
+function agregarCriterio(){
+ const nombre = prompt('¿Qué nuevo factor quieres evaluar? (ej. "Trabajo en equipo")');
+ if(!nombre || !nombre.trim()) return;
+ const id = 'c'+Date.now();
+ criterios.push({id, label: nombre.trim()});
+ saveCriterios();
+ renderCriteriosChips();
+ renderRubrica();
+}
+function quitarCriterio(id){
+ if(!confirm('¿Quitar este criterio de la rúbrica? Las calificaciones ya capturadas en esta columna se perderán.')) return;
+ criterios = criterios.filter(c=>c.id!==id);
+ rubrica.forEach(r=>{ if(r) delete r[id]; });
+ saveCriterios();
+ saveRubrica();
+ renderCriteriosChips();
+ renderRubrica();
+}
 function setRub(i, campo, val){
- if(!rubrica[i]) rubrica[i]={pa:null,as:null,mp:null};
+ if(!rubrica[i]) rubrica[i]={};
  rubrica[i][campo] = val===''? null : Math.max(1,Math.min(3, parseFloat(val)||1));
  saveRubrica();
  actualizarFilaRubrica(i);
  actualizarResumenRubrica();
 }
 function calcAlumno(r){
- if(!r || r.pa==null || r.as==null || r.mp==null) return {suma:null,prom:null,niv:''};
- const suma = r.pa+r.as+r.mp;
- const prom = suma/3;
+ if(!r || criterios.length===0 || criterios.some(c=>r[c.id]==null)) return {suma:null,prom:null,niv:''};
+ const suma = criterios.reduce((a,c)=>a+r[c.id],0);
+ const prom = suma/criterios.length;
  return {suma, prom, niv: nivelDe(prom)};
 }
 function actualizarFilaRubrica(i){
@@ -566,19 +627,19 @@ function actualizarFilaRubrica(i){
  row.querySelector('.rniv').textContent = c.niv;
 }
 function renderRubrica(){
- while(rubrica.length < alumnos.length) rubrica.push({pa:null,as:null,mp:null});
+ while(rubrica.length < alumnos.length) rubrica.push({});
  const t = el('rubricaTabla');
- t.innerHTML = '<tr><th style="text-align:left;padding:4px">N°</th><th style="text-align:left;padding:4px">Alumno</th><th>Part. activa</th><th>Aprend. signif.</th><th>Motiv. percibida</th><th>Suma</th><th>Promedio</th><th>Nivel</th></tr>' +
+ const colsCriterios = criterios.map(c=>`<th>${c.label}</th>`).join('');
+ t.innerHTML = `<tr><th style="text-align:left;padding:4px">N°</th><th style="text-align:left;padding:4px">Alumno</th>${colsCriterios}<th>Suma</th><th>Promedio</th><th>Nivel</th></tr>` +
   alumnos.map((a,i)=>{
-   const r = rubrica[i]||{pa:null,as:null,mp:null};
+   const r = rubrica[i]||{};
    const c = calcAlumno(r);
    const num=(campo,val)=>`<input type="number" min="1" max="3" step="1" value="${val??''}" style="width:48px" onchange="setRub(${i},'${campo}',this.value)">`;
+   const celdasCriterios = criterios.map(cr=>`<td style="padding:4px;text-align:center">${num(cr.id,r[cr.id])}</td>`).join('');
    return `<tr id="rrow${i}">
     <td style="padding:4px">${i+1}</td>
     <td style="padding:4px">${a.nombre||'(sin nombre)'}</td>
-    <td style="padding:4px;text-align:center">${num('pa',r.pa)}</td>
-    <td style="padding:4px;text-align:center">${num('as',r.as)}</td>
-    <td style="padding:4px;text-align:center">${num('mp',r.mp)}</td>
+    ${celdasCriterios}
     <td style="padding:4px;text-align:center" class="rsuma">${c.suma??''}</td>
     <td style="padding:4px;text-align:center" class="rprom">${c.prom!==null?c.prom.toFixed(2):''}</td>
     <td style="padding:4px;text-align:center" class="rniv">${c.niv}</td>
@@ -592,16 +653,18 @@ function actualizarResumenRubrica(){
  const vals = alumnos.map((_,i)=>calcAlumno(rubrica[i])).filter(c=>c.prom!==null);
  if(vals.length===0){ el('rubricaResumen').textContent='Aún no hay calificaciones capturadas.'; if(chartCrit){chartCrit.destroy();chartCrit=null;} if(chartDist){chartDist.destroy();chartDist=null;} return; }
  const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
- const paAvg = avg(rubrica.filter(r=>r&&r.pa!=null).map(r=>r.pa));
- const asAvg = avg(rubrica.filter(r=>r&&r.as!=null).map(r=>r.as));
- const mpAvg = avg(rubrica.filter(r=>r&&r.mp!=null).map(r=>r.mp));
+ const avgsPorCriterio = criterios.map(c=>{
+  const valores = rubrica.filter(r=>r && r[c.id]!=null).map(r=>r[c.id]);
+  return valores.length ? avg(valores) : null;
+ });
  const mediaGrupo = avg(vals.map(c=>c.prom));
  const nivelGrupo = nivelDe(mediaGrupo);
  const niveles=['Bajo','Medio-bajo','Medio','Medio-alto','Alto'];
  const distCounts = niveles.map(n=>vals.filter(c=>c.niv===n).length);
  const dist = niveles.map((n,i)=>`${n}: ${distCounts[i]}`).join(' · ');
+ const porCriterioTxt = criterios.map((c,i)=>`${c.label}: ${avgsPorCriterio[i]!==null?avgsPorCriterio[i].toFixed(2):'—'}`).join(' · ');
  el('rubricaResumen').innerHTML = `Alumnos evaluados: ${vals.length}/${alumnos.length}<br>
-Promedio Participación activa: ${paAvg.toFixed(2)} · Aprendizaje significativo: ${asAvg.toFixed(2)} · Motivación percibida: ${mpAvg.toFixed(2)}<br>
+Promedio por criterio: ${porCriterioTxt}<br>
 <b>Media aritmética del grupo: ${mediaGrupo.toFixed(2)} — Nivel del grupo: ${nivelGrupo}</b><br>
 Distribución: ${dist}`;
  const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--line');
@@ -609,8 +672,8 @@ Distribución: ${dist}`;
  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent');
  const accent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent2');
  const critData = {
-  labels: ['Participación activa','Aprendizaje significativo','Motivación percibida'],
-  datasets: [{ label:'Promedio grupal', data:[paAvg,asAvg,mpAvg], backgroundColor:[accent,accent2,accent] }]
+  labels: criterios.map(c=>c.label),
+  datasets: [{ label:'Promedio grupal', data:avgsPorCriterio.map(v=>v??0), backgroundColor: criterios.map((_,i)=> i%2===0? accent: accent2) }]
  };
  const critOpts = { scales:{ y:{ min:0, max:3, ticks:{color:fgColor}, grid:{color:gridColor} }, x:{ ticks:{color:fgColor}, grid:{display:false} } }, plugins:{ legend:{display:false}, title:{display:true, text:'Promedio grupal por criterio', color:fgColor} } };
  if(chartCrit){ chartCrit.data=critData; chartCrit.options=critOpts; chartCrit.update(); }
@@ -807,16 +870,12 @@ function descargarExcel(){
  const rubRows = alumnos.map((a,i)=>{
   const r = rubrica[i]||{};
   const c = calcAlumno(r);
-  return {
-   'N°': i+1,
-   'Alumno': a.nombre||'',
-   'Participación activa': r.pa??'',
-   'Aprendizaje significativo': r.as??'',
-   'Motivación percibida': r.mp??'',
-   'Suma': c.suma??'',
-   'Promedio': c.prom!==null? +c.prom.toFixed(2) : '',
-   'Nivel': c.niv||''
-  };
+  const base = { 'N°': i+1, 'Alumno': a.nombre||'' };
+  criterios.forEach(cr=>{ base[cr.label] = r[cr.id]??''; });
+  base['Suma'] = c.suma??'';
+  base['Promedio'] = c.prom!==null? +c.prom.toFixed(2) : '';
+  base['Nivel'] = c.niv||'';
+  return base;
  });
  const wsRub = XLSX.utils.json_to_sheet(rubRows);
  XLSX.utils.book_append_sheet(wb, wsRub, 'Rubrica');
@@ -945,7 +1004,7 @@ async function loadDashboard(){
  }catch(e){ error = e; }
  if(error){ grid.innerHTML = '<div class="info">No se pudieron cargar tus grupos. Revisa tu conexión a internet y desliza para actualizar.</div>'; return; }
  const groups = {};
- const prefixes = ['alumnos_','rubrica_','imc_','sesiones_'];
+ const prefixes = ['alumnos_','rubrica_','imc_','sesiones_','criterios_'];
  (data||[]).forEach(row=>{
   for(const p of prefixes){
    if(row.storage_key.indexOf(p)===0){
@@ -970,19 +1029,21 @@ async function loadDashboard(){
   const n = parts[0], g = parts[1], grp = parts.slice(2).join('_');
   const alumnosArr = groups[k].alumnos || [];
   const rubricaArr = groups[k].rubrica || [];
+  const criteriosArr = groups[k].criterios || CRITERIOS_DEFECTO;
   const totalAlum = alumnosArr.length;
   const nAlum = alumnosArr.filter(a=> a && (typeof a==='string'? a.trim()!=='' : (a.nombre||'').trim()!=='')).length;
   const proms = alumnosArr.map((_,i)=>{
    const r = rubricaArr[i];
-   if(!r || r.pa==null || r.as==null || r.mp==null) return null;
-   return (r.pa+r.as+r.mp)/3;
+   if(!r || criteriosArr.length===0 || criteriosArr.some(c=>r[c.id]==null)) return null;
+   return criteriosArr.reduce((a,c)=>a+r[c.id],0)/criteriosArr.length;
   }).filter(v=>v!==null);
   const nRub = proms.length;
   const promGrupal = proms.length? (proms.reduce((a,b)=>a+b,0)/proms.length) : null;
   const nivelLabel = n==='preescolar'?'Preescolar':n==='primaria'?'Primaria':n==='secundaria'?'Secundaria':n;
   const kEsc = k.replace(/'/g,"\\'");
-  return `<div class="card" style="cursor:pointer" onclick="dashboardAbrirGrupo('${kEsc}')">
-   <h2>${nivelLabel} · ${g} — ${grp==='general'?'(sin grupo)':grp}</h2>
+  return `<div class="card" style="cursor:pointer;position:relative" onclick="dashboardAbrirGrupo('${kEsc}')">
+   <button type="button" onclick="event.stopPropagation();dashboardEliminarGrupo('${kEsc}')" title="Eliminar grupo" style="position:absolute;top:10px;right:10px;background:none;border:1px solid var(--line);color:#c23b3b;width:28px;height:28px;padding:0;border-radius:6px;font-size:.9rem;line-height:1">🗑</button>
+   <h2 style="padding-right:30px">${nivelLabel} · ${g} — ${grp==='general'?'(sin grupo)':grp}</h2>
    <div class="info">👥 ${nAlum}${totalAlum?'/'+totalAlum:''} alumno(s) con nombre<br>
    📋 Rúbrica: ${nRub}${totalAlum?'/'+totalAlum:''} capturada(s)${promGrupal!==null?` — promedio ${promGrupal.toFixed(2)} (${nivelDe(promGrupal)})`:''}</div>
   </div>`;
@@ -998,10 +1059,11 @@ function renderComparativa(){
   const n = parts[0], g = parts[1], grp = parts.slice(2).join('_');
   const alumnosArr = lastDashboardGroups[k].alumnos || [];
   const rubricaArr = lastDashboardGroups[k].rubrica || [];
+  const criteriosArr = lastDashboardGroups[k].criterios || CRITERIOS_DEFECTO;
   const proms = alumnosArr.map((_,i)=>{
    const r = rubricaArr[i];
-   if(!r || r.pa==null || r.as==null || r.mp==null) return null;
-   return (r.pa+r.as+r.mp)/3;
+   if(!r || criteriosArr.length===0 || criteriosArr.some(c=>r[c.id]==null)) return null;
+   return criteriosArr.reduce((a,c)=>a+r[c.id],0)/criteriosArr.length;
   }).filter(v=>v!==null);
   const promGrupal = proms.length? (proms.reduce((a,b)=>a+b,0)/proms.length) : null;
   return {k, n, g, grp, promGrupal};
