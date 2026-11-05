@@ -20,9 +20,9 @@
 .tabBadge{display:inline-block;font-size:.65rem;background:var(--line);color:var(--fg);border-radius:999px;padding:1px 6px;margin-left:4px;opacity:.85;font-weight:bold}
 .tabBadge.full{background:#2e8b57;color:#fff;opacity:1}
 .tabBadge.empty{opacity:.5}
-:root{--bg:#faf7ff;--fg:#211334;--card:#fff;--line:#e7defa;--accent:#7a3fc9;--accent2:#e0a62a;color-scheme:light dark;}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#140c22;--fg:#f1e9fb;--card:#1e1333;--line:#3a2a54;--accent:#b386e8;--accent2:#f0c15a;}}
-:root[data-theme="dark"]{--bg:#140c22;--fg:#f1e9fb;--card:#1e1333;--line:#3a2a54;--accent:#b386e8;--accent2:#f0c15a;}
+:root{--bg:#f3f4f7;--fg:#1b1e24;--card:#fff;--line:#e2e5ea;--accent:#6d3fae;--accent2:#b8860b;color-scheme:light dark;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--fg:#ececed;--card:#151515;--line:#2b2b2b;--accent:#33b5e5;--accent2:#33b5e5;}}
+:root[data-theme="dark"]{--bg:#000;--fg:#ececed;--card:#151515;--line:#2b2b2b;--accent:#33b5e5;--accent2:#33b5e5;}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:Georgia,'Times New Roman',serif;padding:env(safe-area-inset-top,0) 16px env(safe-area-inset-bottom,0);}
 .wrap{max-width:820px;margin:0 auto;padding:24px 0 60px}
@@ -68,6 +68,7 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
   <input type="text" id="licCodigoInput" placeholder="Ej. MAID-2026-XXXX" autocapitalize="characters">
   <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
    <button type="button" onclick="canjearLicenciaDesdeGate()">Activar licencia</button>
+   <button type="button" onclick="toggleTema()" style="background:transparent;color:var(--accent);border:1px solid var(--line)" id="btnTemaLic">🌙 Modo noche</button>
    <button type="button" onclick="authSignOut()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🔒 Cerrar sesión</button>
   </div>
  </div>
@@ -87,6 +88,7 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
 <div class="sub">Tus grupos registrados — toca uno para continuar, o crea uno nuevo.</div>
 <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
 <button type="button" onclick="dashboardNuevoGrupo()">+ Nuevo grupo</button>
+<button type="button" onclick="toggleTema()" style="background:transparent;color:var(--accent);border:1px solid var(--line)" id="btnTemaDash">🌙 Modo noche</button>
 <button type="button" onclick="authSignOut()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🔒 Cerrar sesión</button>
 </div>
 <div id="dashboardGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px"></div>
@@ -114,6 +116,7 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
 <button type="button" onclick="window.print()">🖨️ Imprimir</button>
 <button type="button" onclick="descargarRespaldo()">📥 Descargar respaldo</button>
 <button type="button" onclick="document.getElementById('restoreFile').click()">📤 Cargar respaldo</button>
+<button type="button" onclick="toggleTema()" style="background:transparent;color:var(--accent);border:1px solid var(--line)" id="btnTemaApp">🌙 Modo noche</button>
 <button type="button" onclick="authSignOut()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🔒 Cerrar sesión</button>
 <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="cargarRespaldo(this.files[0])">
 </div>
@@ -361,6 +364,23 @@ secundaria:{
  "3°":{m:"Valora capacidades propias y de otros, mostrando mayor autonomía motriz.",e:"Diseña y participa en actividades de iniciación deportiva y deporte educativo.",s:"Diseña alternativas contra el sedentarismo, a partir del análisis de riesgos.",l:"Emplea pensamiento estratégico para favorecer colaboración y creatividad.",i:"Promueve relaciones asertivas, fomentando el juego limpio y la confrontación lúdica."}}
 };
 function el(id){return document.getElementById(id)}
+function temaActual(){
+ try{ const g = localStorage.getItem('maid_tema'); if(g==='dark'||g==='light') return g; }catch(e){}
+ return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+}
+function actualizarBotonesTema(modo){
+ const txt = modo==='dark' ? '☀️ Modo día' : '🌙 Modo noche';
+ ['btnTemaLic','btnTemaDash','btnTemaApp'].forEach(id=>{ const b = el(id); if(b) b.textContent = txt; });
+}
+function aplicarTema(modo){
+ document.documentElement.setAttribute('data-theme', modo==='dark' ? 'dark' : 'light');
+ try{ localStorage.setItem('maid_tema', modo); }catch(e){}
+ actualizarBotonesTema(modo);
+}
+function toggleTema(){
+ aplicarTema(temaActual()==='dark' ? 'light' : 'dark');
+}
+aplicarTema(temaActual());
 function fillGrado(){
  const n=el('nivel').value; el('grado').innerHTML=GRADOS[n].map(g=>`<option>${g}</option>`).join('');
  el('campoInfo').textContent=CAMPOS[el('campoFormativo').value];
