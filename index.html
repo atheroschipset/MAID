@@ -95,6 +95,8 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
 <h2>Nueva escuela</h2>
 <label>Nombre</label>
 <input type="text" id="escNombre" placeholder="Ej. Secundaria 48">
+<label>Nivel educativo</label>
+<select id="escNivel"><option value="preescolar">Preescolar</option><option value="primaria">Primaria</option><option value="secundaria">Secundaria</option></select>
 <label>Clave de centro de trabajo (CCT)</label>
 <input type="text" id="escCct" placeholder="Ej. 02DES0048X">
 <label>Turno</label>
@@ -160,8 +162,14 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
 
 <div class="card" data-tab="curricular">
 <h2>1. Ubicación curricular</h2>
+<div id="nivelSelectorWrap">
 <label>Nivel educativo</label>
 <select id="nivel"><option value="preescolar">Preescolar</option><option value="primaria">Primaria</option><option value="secundaria">Secundaria</option></select>
+</div>
+<div id="nivelFijoWrap" style="display:none">
+<label>Nivel educativo</label>
+<div class="info" id="nivelFijoInfo"></div>
+</div>
 <label>Grado</label>
 <select id="grado"></select>
 <label>Campo formativo</label>
@@ -1061,6 +1069,18 @@ function actualizarIndicadores(){
 }
 let lastDashboardGroups = {};
 let chartComparativa = null;
+function aplicarNivelFijo(){
+ const wrapSel = el('nivelSelectorWrap'), wrapFijo = el('nivelFijoWrap'), info = el('nivelFijoInfo');
+ const esc = escuelasCache.find(e=>e.id===currentEscuelaId);
+ if(esc && esc.nivel){
+  if(wrapSel) wrapSel.style.display='none';
+  if(wrapFijo) wrapFijo.style.display='block';
+  if(info) info.textContent = esc.nivel==='preescolar'?'Preescolar':esc.nivel==='primaria'?'Primaria':esc.nivel==='secundaria'?'Secundaria':esc.nivel;
+ } else {
+  if(wrapSel) wrapSel.style.display='block';
+  if(wrapFijo) wrapFijo.style.display='none';
+ }
+}
 async function loadEscuelas(){
  escuelasCache = (await dbGet('escuelas')) || [];
  const grid = el('escuelasGrid');
@@ -1074,19 +1094,19 @@ async function loadEscuelas(){
   return `<div class="card" style="cursor:pointer;position:relative" onclick="abrirEscuela('${idEsc}')">
    <button type="button" onclick="event.stopPropagation();escuelaEliminar('${idEsc}')" title="Eliminar escuela" style="position:absolute;top:10px;right:10px;background:none;border:1px solid var(--line);color:#c23b3b;width:28px;height:28px;padding:0;border-radius:6px;font-size:.9rem;line-height:1">🗑</button>
    <h2 style="padding-right:30px">${esc.nombre}</h2>
-   <div class="info">Clave CCT: ${esc.cct||'—'}<br>Turno: ${esc.turno||'—'}</div>
+   <div class="info">Nivel: ${esc.nivel==='preescolar'?'Preescolar':esc.nivel==='primaria'?'Primaria':esc.nivel==='secundaria'?'Secundaria':'—'}<br>Clave CCT: ${esc.cct||'—'}<br>Turno: ${esc.turno||'—'}</div>
   </div>`;
  }).join('');
 }
 function escuelaMostrarForm(mostrar){
  const f = el('escuelaForm'); if(!f) return;
  f.style.display = mostrar ? 'block' : 'none';
- if(mostrar){ el('escNombre').value=''; el('escCct').value=''; el('escTurno').value='Matutino'; }
+ if(mostrar){ el('escNombre').value=''; el('escNivel').value='preescolar'; el('escCct').value=''; el('escTurno').value='Matutino'; }
 }
 async function escuelaGuardarNueva(){
  const nombre = el('escNombre').value.trim();
  if(!nombre){ alert('Escribe el nombre de la escuela.'); return; }
- const nueva = { id: 'esc_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), nombre, cct: el('escCct').value.trim(), turno: el('escTurno').value };
+ const nueva = { id: 'esc_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), nombre, nivel: el('escNivel').value, cct: el('escCct').value.trim(), turno: el('escTurno').value };
  escuelasCache.push(nueva);
  await dbSet('escuelas', escuelasCache);
  escuelaMostrarForm(false);
@@ -1231,6 +1251,7 @@ function dashboardAbrirGrupo(key){
  updateCapac(); updateProceso();
  el('grupoLetra').value = (grp && grp!=='general') ? grp : '';
  updateGradoGrupo();
+ aplicarNivelFijo();
  document.getElementById('dashboardView').style.display='none';
  el('appWrap').style.display='block';
  currentGroupKey = null;
@@ -1241,7 +1262,10 @@ function dashboardAbrirGrupo(key){
 function dashboardNuevoGrupo(){
  document.getElementById('dashboardView').style.display='none';
  el('appWrap').style.display='block';
- el('nivel').value='preescolar'; fillGrado(); el('grupoLetra').value=''; updateGradoGrupo();
+ const escN = escuelasCache.find(e=>e.id===currentEscuelaId);
+ el('nivel').value = (escN && escN.nivel) || 'preescolar';
+ fillGrado(); el('grupoLetra').value=''; updateGradoGrupo();
+ aplicarNivelFijo();
  currentGroupKey = null;
  cargarGrupo();
  showTab('curricular');
