@@ -82,11 +82,37 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
   <div style="margin-top:14px"><button type="button" onclick="document.getElementById('deviceLockModal').style.display='none'">Entendido</button></div>
  </div>
 </div>
+<div id="escuelasView" style="display:none">
+<div class="wrap">
+<h1>Mis escuelas</h1>
+<div class="sub">Elige una escuela para ver sus grupos, o registra una nueva.</div>
+<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+<button type="button" onclick="escuelaMostrarForm(true)">+ Nueva escuela</button>
+<button type="button" onclick="toggleTema()" style="background:transparent;color:var(--accent);border:1px solid var(--line)" id="btnTemaEsc">🌙 Modo noche</button>
+<button type="button" onclick="authSignOut()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🔒 Cerrar sesión</button>
+</div>
+<div class="card" id="escuelaForm" style="display:none">
+<h2>Nueva escuela</h2>
+<label>Nombre</label>
+<input type="text" id="escNombre" placeholder="Ej. Secundaria 48">
+<label>Clave de centro de trabajo (CCT)</label>
+<input type="text" id="escCct" placeholder="Ej. 02DES0048X">
+<label>Turno</label>
+<select id="escTurno"><option value="Matutino">Matutino</option><option value="Vespertino">Vespertino</option><option value="Jornada ampliada">Jornada ampliada</option></select>
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+<button type="button" onclick="escuelaGuardarNueva()">Guardar escuela</button>
+<button type="button" onclick="escuelaMostrarForm(false)" style="background:transparent;color:var(--accent);border:1px solid var(--line)">Cancelar</button>
+</div>
+</div>
+<div id="escuelasGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px"></div>
+</div>
+</div>
 <div id="dashboardView" style="display:none">
 <div class="wrap">
-<h1>Tablero general</h1>
-<div class="sub">Tus grupos registrados — toca uno para continuar, o crea uno nuevo.</div>
+<h1 id="dashboardTitulo">Tablero general</h1>
+<div class="sub" id="dashboardSub">Tus grupos registrados — toca uno para continuar, o crea uno nuevo.</div>
 <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+<button type="button" onclick="volverEscuelas()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">← Escuelas</button>
 <button type="button" onclick="dashboardNuevoGrupo()">+ Nuevo grupo</button>
 <button type="button" onclick="toggleTema()" style="background:transparent;color:var(--accent);border:1px solid var(--line)" id="btnTemaDash">🌙 Modo noche</button>
 <button type="button" onclick="authSignOut()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🔒 Cerrar sesión</button>
@@ -214,6 +240,8 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--b
 <input type="text" id="grupoLetra" placeholder="A" maxlength="3">
 <label>Grado-Grupo</label>
 <div class="info" id="gradoGrupoInfo"></div>
+<label>Horario</label>
+<input type="text" id="horarioGrupo" placeholder="Ej. Lun y Mié 7:00-7:50" onchange="guardarHorarioGrupo()">
 </div>
 
 <div class="card" data-tab="alumnos">
@@ -370,7 +398,7 @@ function temaActual(){
 }
 function actualizarBotonesTema(modo){
  const txt = modo==='dark' ? '☀️ Modo día' : '🌙 Modo noche';
- ['btnTemaLic','btnTemaDash','btnTemaApp'].forEach(id=>{ const b = el(id); if(b) b.textContent = txt; });
+ ['btnTemaLic','btnTemaEsc','btnTemaDash','btnTemaApp'].forEach(id=>{ const b = el(id); if(b) b.textContent = txt; });
 }
 function aplicarTema(modo){
  document.documentElement.setAttribute('data-theme', modo==='dark' ? 'dark' : 'light');
@@ -402,12 +430,23 @@ function groupKey(){
  return (n+'_'+g+'_'+grp).replace(/\s+/g,'');
 }
 let currentGroupKey = null;
+let currentEscuelaId = null;
+let escuelasCache = [];
+let gruposMetaCache = {};
 async function cargarGrupo(){
  const k = groupKey();
- if(k === currentGroupKey) return;
+ if(k === currentGroupKey){
+  const hEl0 = el('horarioGrupo'); if(hEl0) hEl0.value = (gruposMetaCache[k] && gruposMetaCache[k].horario) || '';
+  return;
+ }
  currentGroupKey = k;
  await loadAlumnos(); await loadRubrica(); await loadImc(); await loadSesiones();
  if(typeof actualizarIndicadores==='function') actualizarIndicadores();
+ if(!gruposMetaCache[k] || gruposMetaCache[k].escuela_id !== currentEscuelaId){
+  gruposMetaCache[k] = Object.assign({}, gruposMetaCache[k], { escuela_id: currentEscuelaId });
+  dbSet('grupos_meta', gruposMetaCache);
+ }
+ const hEl = el('horarioGrupo'); if(hEl) hEl.value = (gruposMetaCache[k] && gruposMetaCache[k].horario) || '';
 }
 async function dbGet(key){
  const { data: userData } = await sb.auth.getUser();
@@ -435,6 +474,7 @@ async function dashboardEliminarGrupo(key){
  if(!confirm(`¿Eliminar el grupo "${nivelLabel} · ${g} — ${grp==='general'?'(sin grupo)':grp}"?\n\nSe borrarán sus alumnos, rúbrica, IMC y sesiones. Esto no se puede deshacer.`)) return;
  try{
   await conTiempoLimite(dbDeleteGroup(key), 8000);
+  if(gruposMetaCache[key]){ delete gruposMetaCache[key]; await dbSet('grupos_meta', gruposMetaCache); }
   if(key === currentGroupKey) currentGroupKey = null;
   await loadDashboard();
  }catch(e){
@@ -1021,9 +1061,71 @@ function actualizarIndicadores(){
 }
 let lastDashboardGroups = {};
 let chartComparativa = null;
+async function loadEscuelas(){
+ escuelasCache = (await dbGet('escuelas')) || [];
+ const grid = el('escuelasGrid');
+ if(!grid) return;
+ if(escuelasCache.length===0){
+  grid.innerHTML = '<div class="info">Aún no tienes escuelas registradas. Usa "+ Nueva escuela" para comenzar.</div>';
+  return;
+ }
+ grid.innerHTML = escuelasCache.map(esc=>{
+  const idEsc = esc.id.replace(/'/g,"\\'");
+  return `<div class="card" style="cursor:pointer;position:relative" onclick="abrirEscuela('${idEsc}')">
+   <button type="button" onclick="event.stopPropagation();escuelaEliminar('${idEsc}')" title="Eliminar escuela" style="position:absolute;top:10px;right:10px;background:none;border:1px solid var(--line);color:#c23b3b;width:28px;height:28px;padding:0;border-radius:6px;font-size:.9rem;line-height:1">🗑</button>
+   <h2 style="padding-right:30px">${esc.nombre}</h2>
+   <div class="info">Clave CCT: ${esc.cct||'—'}<br>Turno: ${esc.turno||'—'}</div>
+  </div>`;
+ }).join('');
+}
+function escuelaMostrarForm(mostrar){
+ const f = el('escuelaForm'); if(!f) return;
+ f.style.display = mostrar ? 'block' : 'none';
+ if(mostrar){ el('escNombre').value=''; el('escCct').value=''; el('escTurno').value='Matutino'; }
+}
+async function escuelaGuardarNueva(){
+ const nombre = el('escNombre').value.trim();
+ if(!nombre){ alert('Escribe el nombre de la escuela.'); return; }
+ const nueva = { id: 'esc_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), nombre, cct: el('escCct').value.trim(), turno: el('escTurno').value };
+ escuelasCache.push(nueva);
+ await dbSet('escuelas', escuelasCache);
+ escuelaMostrarForm(false);
+ loadEscuelas();
+}
+async function escuelaEliminar(id){
+ const esc = escuelasCache.find(e=>e.id===id);
+ if(!confirm(`¿Eliminar la escuela "${esc?esc.nombre:''}"?\n\nLos grupos que tenga no se borran, pero dejarán de aparecer aquí.`)) return;
+ escuelasCache = escuelasCache.filter(e=>e.id!==id);
+ await dbSet('escuelas', escuelasCache);
+ loadEscuelas();
+}
+function abrirEscuela(id){
+ currentEscuelaId = id;
+ el('escuelasView').style.display = 'none';
+ document.getElementById('dashboardView').style.display = 'block';
+ loadDashboard();
+ window.scrollTo(0,0);
+}
+function volverEscuelas(){
+ document.getElementById('dashboardView').style.display = 'none';
+ currentEscuelaId = null;
+ el('escuelasView').style.display = 'block';
+ loadEscuelas();
+ window.scrollTo(0,0);
+}
+async function guardarHorarioGrupo(){
+ const k = currentGroupKey || groupKey();
+ gruposMetaCache[k] = Object.assign({}, gruposMetaCache[k], { horario: el('horarioGrupo').value.trim(), escuela_id: currentEscuelaId });
+ await dbSet('grupos_meta', gruposMetaCache);
+}
 async function loadDashboard(){
  const grid = el('dashboardGrid');
  grid.innerHTML = '<div class="info">Cargando tus grupos…</div>';
+ const esc = escuelasCache.find(e=>e.id===currentEscuelaId);
+ const tituloEl = el('dashboardTitulo'), subEl = el('dashboardSub');
+ if(tituloEl) tituloEl.textContent = esc ? esc.nombre : 'Tablero general';
+ if(subEl) subEl.textContent = esc ? `Clave CCT ${esc.cct||'—'} · Turno ${esc.turno||'—'}` : 'Tus grupos registrados — toca uno para continuar, o crea uno nuevo.';
+ gruposMetaCache = (await dbGet('grupos_meta')) || {};
  let data, error;
  try{
   const { data: userData } = await conTiempoLimite(sb.auth.getUser(), 8000);
@@ -1046,9 +1148,9 @@ async function loadDashboard(){
   }
  });
  lastDashboardGroups = groups;
- const keys = Object.keys(groups).filter(k=>k.split('_').length>=3);
+ const keys = Object.keys(groups).filter(k=>k.split('_').length>=3 && gruposMetaCache[k] && gruposMetaCache[k].escuela_id===currentEscuelaId);
  if(keys.length===0){
-  grid.innerHTML = '<div class="info">Aún no tienes grupos guardados. Usa "+ Nuevo grupo" para comenzar.</div>';
+  grid.innerHTML = '<div class="info">Aún no tienes grupos en esta escuela. Usa "+ Nuevo grupo" para comenzar.</div>';
   if(typeof renderComparativa==='function') renderComparativa();
   return;
  }
@@ -1070,11 +1172,12 @@ async function loadDashboard(){
   const promGrupal = proms.length? (proms.reduce((a,b)=>a+b,0)/proms.length) : null;
   const nivelLabel = n==='preescolar'?'Preescolar':n==='primaria'?'Primaria':n==='secundaria'?'Secundaria':n;
   const kEsc = k.replace(/'/g,"\\'");
+  const horario = (gruposMetaCache[k] && gruposMetaCache[k].horario) || '';
   return `<div class="card" style="cursor:pointer;position:relative" onclick="dashboardAbrirGrupo('${kEsc}')">
    <button type="button" onclick="event.stopPropagation();dashboardEliminarGrupo('${kEsc}')" title="Eliminar grupo" style="position:absolute;top:10px;right:10px;background:none;border:1px solid var(--line);color:#c23b3b;width:28px;height:28px;padding:0;border-radius:6px;font-size:.9rem;line-height:1">🗑</button>
    <h2 style="padding-right:30px">${nivelLabel} · ${g} — ${grp==='general'?'(sin grupo)':grp}</h2>
    <div class="info">👥 ${nAlum}${totalAlum?'/'+totalAlum:''} alumno(s) con nombre<br>
-   📋 Rúbrica: ${nRub}${totalAlum?'/'+totalAlum:''} capturada(s)${promGrupal!==null?` — promedio ${promGrupal.toFixed(2)} (${nivelDe(promGrupal)})`:''}</div>
+   📋 Rúbrica: ${nRub}${totalAlum?'/'+totalAlum:''} capturada(s)${promGrupal!==null?` — promedio ${promGrupal.toFixed(2)} (${nivelDe(promGrupal)})`:''}${horario?`<br>🕐 ${horario}`:''}</div>
   </div>`;
  }).join('');
  if(typeof renderComparativa==='function') renderComparativa();
@@ -1213,6 +1316,7 @@ async function mostrarSegunLicencia(){
  if(error || !data || !data.valida){
   el('appWrap').style.display='none';
   document.getElementById('dashboardView').style.display='none';
+  const ev0 = el('escuelasView'); if(ev0) ev0.style.display='none';
   if(lg){
    lg.style.display='flex';
    const motivo = data && data.motivo;
@@ -1225,8 +1329,9 @@ async function mostrarSegunLicencia(){
   }
  } else {
   if(lg) lg.style.display='none';
-  document.getElementById('dashboardView').style.display='block';
-  loadDashboard();
+  document.getElementById('dashboardView').style.display='none';
+  const ev = el('escuelasView'); if(ev) ev.style.display='block';
+  loadEscuelas();
  }
 }
 async function canjearLicenciaDesdeGate(){
@@ -1268,6 +1373,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
   el('authGate').style.display='flex';
   el('appWrap').style.display='none';
   document.getElementById('dashboardView').style.display='none';
+  const ev2 = el('escuelasView'); if(ev2) ev2.style.display='none';
   const lg = el('licGate'); if(lg) lg.style.display='none';
  }
 });
