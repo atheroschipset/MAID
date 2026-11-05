@@ -4,90 +4,270 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Solicitar licencia MAID</title>
+<meta name="description" content="MAID — Método de Aprendizaje por Impulsos Didácticos. Herramienta de planeación y evaluación para Educación Física.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
 <style>
- :root{--bg:#faf7ff;--fg:#211334;--card:#fff;--line:#e7defa;--accent:#7a3fc9;--accent2:#e0a62a;--ok:#2e8b57}
- @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#140c22;--fg:#f1e9fb;--card:#1e1333;--line:#3a2a54;--accent:#b386e8;--accent2:#f0c15a}}
- *{box-sizing:border-box}
- body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:28px 16px 60px}
- .wrap{max-width:460px;margin:0 auto}
- h1{font-size:1.4rem;margin:0 0 4px}
- .sub{opacity:.75;font-size:.9rem;margin-bottom:20px;line-height:1.5}
- .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px}
- .card h2{margin:0 0 10px;font-size:1.05rem;color:var(--accent)}
- .precio{font-size:1.8rem;font-weight:800;color:var(--accent);margin:4px 0 10px}
- .datos-pago{font-family:ui-monospace,Consolas,monospace;font-size:.88rem;line-height:1.9;background:var(--bg);border:1px dashed var(--line);border-radius:8px;padding:12px}
- .datos-pago b{font-family:system-ui,sans-serif;font-weight:600;display:inline-block;min-width:92px}
- label{display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px}
- input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg);font-size:.95rem;font-family:inherit}
- textarea{resize:vertical;min-height:60px}
- button{width:100%;margin-top:16px;cursor:pointer;border:none;border-radius:8px;padding:12px 16px;font-weight:700;font-size:1rem;background:var(--accent);color:#fff}
- button:disabled{opacity:.5;cursor:default}
- .msg{font-size:.85rem;margin-top:12px;padding:10px 12px;border-radius:8px;display:none;line-height:1.5}
- .msg.ok{display:block;background:#2e8b5722;color:var(--ok)}
- .msg.err{display:block;background:#c23b3b22;color:#c23b3b}
- .nota{font-size:.78rem;opacity:.65;margin-top:14px;line-height:1.5}
- .incluye{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
- .incluye li{display:flex;gap:10px;font-size:.88rem;line-height:1.4}
- .incluye li b{display:block;font-size:.9rem}
- .incluye li span.tick{flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;margin-top:1px}
- .incluye .grupo-titulo{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent2);margin:14px 0 2px}
- .incluye .grupo-titulo:first-child{margin-top:0}
+  :root{
+    --azul:#0f2a4a; --azul-2:#163b66; --verde:#1f8a5b; --verde-claro:#e7f4ee;
+    --dorado:#c9a227; --tinta:#1d2733; --gris:#5b6776; --linea:#dde3ea;
+    --fondo:#f4f6f9; --blanco:#ffffff; --err:#b3261e; --err-bg:#fdecea;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:"Source Sans 3",system-ui,sans-serif;color:var(--tinta);background:var(--fondo);line-height:1.55;font-size:17px}
+  h1,h2,h3{font-family:Montserrat,sans-serif;line-height:1.2;margin:0}
+  a{color:var(--azul-2)}
+
+  /* Franja institucional */
+  .franja{height:6px;background:linear-gradient(90deg,var(--azul) 0 60%,var(--verde) 60% 85%,var(--dorado) 85%)}
+  header.top{background:var(--blanco);border-bottom:1px solid var(--linea)}
+  .top .wrap{display:flex;align-items:center;gap:14px;padding:14px 16px}
+  .escudo{width:46px;height:46px;flex:none}
+  .marca b{display:block;font-family:Montserrat;font-weight:800;font-size:20px;color:var(--azul);letter-spacing:.06em}
+  .marca span{font-size:13px;color:var(--gris)}
+  .wrap{max-width:1040px;margin:0 auto}
+
+  /* Hero */
+  .hero{background:linear-gradient(135deg,var(--azul) 0%,var(--azul-2) 100%);color:#fff;overflow:hidden}
+  .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:center;padding:44px 16px 40px}
+  .etiqueta{display:inline-block;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);padding:4px 12px;border-radius:999px;font-size:13px;letter-spacing:.04em;margin-bottom:14px}
+  .hero h1{font-size:clamp(28px,4.4vw,42px);font-weight:800}
+  .hero p{color:#d6e2f0;font-size:18px;margin:14px 0 22px}
+  .hero .cta{display:inline-block;background:var(--dorado);color:var(--azul);font-family:Montserrat;font-weight:700;padding:12px 22px;border-radius:8px;text-decoration:none}
+  .hero svg{width:100%;height:auto;display:block}
+
+  /* Secciones */
+  section{padding:44px 16px}
+  .titulo-sec{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .titulo-sec::before{content:"";width:6px;height:28px;background:var(--verde);border-radius:3px}
+  .titulo-sec h2{font-size:24px;color:var(--azul)}
+
+  .rasgos{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+  .rasgo{background:var(--blanco);border:1px solid var(--linea);border-radius:12px;padding:20px}
+  .rasgo .ico{width:52px;height:52px;border-radius:12px;background:var(--verde-claro);display:grid;place-items:center;margin-bottom:12px}
+  .rasgo .ico svg{width:30px;height:30px}
+  .rasgo h3{font-size:16px;color:var(--azul);margin-bottom:6px}
+  .rasgo p{margin:0;color:var(--gris);font-size:15.5px}
+
+  /* Pasos */
+  .pasos{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:p}
+  .paso{background:var(--blanco);border-radius:12px;border:1px solid var(--linea);padding:20px;position:relative}
+  .paso::before{counter-increment:p;content:counter(p);position:absolute;top:-14px;left:20px;width:30px;height:30px;border-radius:50%;background:var(--azul);color:#fff;font-family:Montserrat;font-weight:700;display:grid;place-items:center;font-size:15px}
+  .paso h3{font-size:16px;color:var(--azul);margin:6px 0}
+  .paso p{margin:0;color:var(--gris);font-size:15.5px}
+
+  /* Precio + pago */
+  .bloque{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .tarjeta{background:var(--blanco);border:1px solid var(--linea);border-radius:14px;padding:24px}
+  .precio{border-top:5px solid var(--dorado)}
+  .monto{font-family:Montserrat;font-weight:800;font-size:40px;color:var(--azul)}
+  .monto small{font-size:16px;color:var(--gris);font-weight:600}
+  .datos{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin-top:14px;font-size:16px}
+  .datos dt{color:var(--gris)}
+  .datos dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums;word-break:break-all}
+  .apk{border-top:5px solid var(--verde)}
+  .apk p{color:var(--gris);font-size:15.5px}
+  .btn-sec{display:inline-block;background:var(--verde);color:#fff;text-decoration:none;font-family:Montserrat;font-weight:700;padding:12px 20px;border-radius:8px;margin-top:6px}
+
+  /* Formulario */
+  .form-zona{background:var(--blanco);border-top:1px solid var(--linea)}
+  form{max-width:640px}
+  label{display:block;font-weight:600;font-size:15px;margin:16px 0 6px;color:var(--azul)}
+  label .opc{font-weight:400;color:var(--gris)}
+  input,textarea{width:100%;font:inherit;padding:11px 13px;border:1px solid #c5ced9;border-radius:8px;background:#fbfcfd}
+  input:focus,textarea:focus{outline:3px solid rgba(31,138,91,.25);border-color:var(--verde)}
+  textarea{min-height:90px;resize:vertical}
+  button[type=submit]{margin-top:22px;background:var(--azul);color:#fff;border:0;font-family:Montserrat;font-weight:700;font-size:16px;padding:14px 26px;border-radius:8px;cursor:pointer}
+  button[type=submit]:hover{background:var(--azul-2)}
+  button[disabled]{opacity:.6;cursor:wait}
+  .msg{margin-top:16px;padding:0;border-radius:8px;font-size:15.5px}
+  .msg.ok{padding:12px 14px;background:var(--verde-claro);color:#14583a;border:1px solid #b9dfcc}
+  .msg.err{padding:12px 14px;background:var(--err-bg);color:var(--err);border:1px solid #f3c3bf}
+  .nota{color:var(--gris);font-size:15px;margin-top:18px}
+
+  footer{background:var(--azul);color:#b9c7d8;font-size:14px;text-align:center;padding:22px 16px}
+  footer b{color:#fff}
+
+  @media (max-width:760px){
+    .hero .wrap,.bloque{grid-template-columns:1fr}
+    .hero svg{max-width:420px;margin:0 auto}
+    .pasos{grid-template-columns:1fr;gap:24px}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
- <h1>Solicitar licencia de MAID</h1>
- <div class="sub">Herramienta de planeación y evaluación para Educación Física — rúbrica, IMC, sesiones y diario, todo en una app.</div>
 
- <div class="card">
-  <h2>Qué incluye MAID</h2>
-  <ul class="incluye">
-   <li><span class="tick">✓</span><span><b>Ahorra horas de papeleo</b> — genera tu carátula NEM lista para Word en minutos: campo formativo, PDA, ejes articuladores y todo lo que pide el plan de estudios</span></li>
-   <li><span class="tick">✓</span><span><b>La rúbrica se califica sola</b> — pon tus criterios (trae 3 de base, agrega los que quieras) y la app calcula promedios, nivel de desempeño y gráficas al instante</span></li>
-   <li><span class="tick">✓</span><span><b>Seguimiento físico real</b> — IMC antes/después con la batería ALPHA-Fitness, individual y por grupo, con gráficas de aspecto profesional</span></li>
-   <li><span class="tick">✓</span><span><b>Todos tus grupos en un solo lugar</b> — tablero comparativo entre grupos, sincronizado en la nube entre tu celular y tu computadora</span></li>
-   <li><span class="tick">✓</span><span><b>Exporta cuando quieras</b> — a Word para tu carátula, a Excel para tu rúbrica e IMC</span></li>
-  </ul>
- </div>
-
- <div class="card">
-  <h2>Precio</h2>
-  <div class="precio">$300 MXN <span style="font-size:.95rem;font-weight:400;opacity:.7">/ ciclo escolar</span></div>
-  <p style="font-size:.85rem;opacity:.8;margin:0 0 10px">Haz tu transferencia a estos datos:</p>
-  <div class="datos-pago">
-<b>Banco:</b> BBVA<br>
-<b>Tarjeta:</b> 4152 3145 0071 3550<br>
-<b>CLABE:</b> 012760015976085207<br>
-<b>A nombre de:</b> Carlos Emmanuel Arana Solorio
+<div class="franja"></div>
+<header class="top">
+  <div class="wrap">
+    <svg class="escudo" viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M24 3l18 6v13c0 11-7.5 19-18 23C13.5 41 6 33 6 22V9z" fill="#0f2a4a"/>
+      <path d="M24 7l14 4.7V22c0 8.6-5.7 15-14 18.4C15.7 37 10 30.6 10 22V11.7z" fill="#163b66"/>
+      <circle cx="27" cy="15" r="3.2" fill="#c9a227"/>
+      <path d="M26 19l-4 7 5 3-2 8M22 26l-6 1M27 22l6 3" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+    <div class="marca">
+      <b>MAID</b>
+      <span>Método de Aprendizaje por Impulsos Didácticos · Educación Física</span>
+    </div>
   </div>
- </div>
+</header>
 
- <div class="card">
-  <h2>Descarga la app</h2>
-  <p style="font-size:.85rem;opacity:.8;margin:0 0 10px">Descarga el archivo e instálalo en tu celular Android. La primera vez Android te va a preguntar si confías en el origen — dale "Instalar de todos modos" o "Permitir", es normal.</p>
-  <a href="MAID.apk" download style="display:block;text-align:center;text-decoration:none;background:var(--accent);color:#fff;font-weight:700;border-radius:8px;padding:12px 16px;font-size:1rem">⬇ Descargar MAID (.apk)</a>
- </div>
-
- <div class="card">
-  <h2>Tus datos</h2>
-  <form id="formSolicitud">
-   <label>Nombre completo</label>
-   <input type="text" id="fNombre" required>
-   <label>Correo (con este vas a crear tu cuenta en MAID)</label>
-   <input type="email" id="fCorreo" required>
-   <label>Escuela (opcional)</label>
-   <input type="text" id="fEscuela">
-   <label>Ciclo escolar</label>
-   <input type="text" id="fCiclo" placeholder="2026-2027" required>
-   <label>Notas (opcional — ej. ya hice la transferencia hoy a las 3pm)</label>
-   <textarea id="fNotas"></textarea>
-   <button type="submit" id="btnEnviar">Enviar solicitud</button>
-  </form>
-  <div class="msg" id="msg"></div>
- </div>
-
- <p class="nota">Después de confirmar tu pago, te haremos llegar tu código de licencia al correo que escribiste arriba para que puedas crear tu cuenta en MAID.</p>
+<div class="hero">
+  <div class="wrap">
+    <div>
+      <span class="etiqueta">Licencia por ciclo escolar</span>
+      <h1>Planea, evalúa y da seguimiento a tu clase de Educación Física</h1>
+      <p>Rúbrica, IMC, sesiones y diario de clase en una sola herramienta, alineada a la Nueva Escuela Mexicana.</p>
+      <a class="cta" href="#solicitud">Solicitar mi licencia</a>
+    </div>
+    <!-- Ilustración: patio escolar con alumnos en actividad -->
+    <svg viewBox="0 0 420 300" role="img" aria-label="Alumnos realizando actividad física en el patio escolar">
+      <rect x="10" y="20" width="400" height="260" rx="18" fill="#1f8a5b"/>
+      <rect x="10" y="20" width="400" height="260" rx="18" fill="url(#rayas)" opacity=".25"/>
+      <defs>
+        <pattern id="rayas" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="20" height="40" fill="#fff" opacity=".18"/></pattern>
+      </defs>
+      <!-- líneas de cancha -->
+      <rect x="34" y="44" width="352" height="212" rx="6" fill="none" stroke="#fff" stroke-width="3" opacity=".8"/>
+      <line x1="210" y1="44" x2="210" y2="256" stroke="#fff" stroke-width="3" opacity=".8"/>
+      <circle cx="210" cy="150" r="36" fill="none" stroke="#fff" stroke-width="3" opacity=".8"/>
+      <!-- conos -->
+      <g fill="#f08a24"><path d="M70 236l9-26 9 26z"/><path d="M110 236l9-26 9 26z"/><path d="M150 236l9-26 9 26z"/></g>
+      <g fill="#fff" opacity=".9"><rect x="68" y="234" width="22" height="4" rx="2"/><rect x="108" y="234" width="22" height="4" rx="2"/><rect x="148" y="234" width="22" height="4" rx="2"/></g>
+      <!-- alumno corriendo -->
+      <g stroke="#0f2a4a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <path d="M118 120l-14 34 26 16-8 36"/><path d="M104 154l-26 6"/><path d="M114 132l-20-6M116 132l24 12"/>
+      </g>
+      <circle cx="126" cy="100" r="12" fill="#0f2a4a"/>
+      <rect x="104" y="116" width="22" height="30" rx="8" fill="#c9a227" transform="rotate(20 115 131)"/>
+      <!-- alumna saltando -->
+      <g stroke="#0f2a4a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <path d="M300 120v38l-16 26M300 158l16 26"/><path d="M300 128l-22-24M300 128l22-24"/>
+      </g>
+      <circle cx="300" cy="96" r="12" fill="#0f2a4a"/>
+      <rect x="290" y="116" width="20" height="34" rx="8" fill="#ffffff"/>
+      <!-- balón -->
+      <circle cx="232" cy="214" r="15" fill="#fff"/>
+      <path d="M232 199l5 9-5 6-5-6zM220 220l7-6 5 6-4 8zM244 220l-7-6-5 6 4 8z" fill="#0f2a4a"/>
+      <!-- cronómetro -->
+      <g transform="translate(340 46)">
+        <circle cx="0" cy="28" r="26" fill="#fff"/>
+        <rect x="-6" y="-2" width="12" height="8" rx="2" fill="#fff"/>
+        <circle cx="0" cy="28" r="19" fill="none" stroke="#0f2a4a" stroke-width="3"/>
+        <path d="M0 28V15M0 28l9 6" stroke="#0f2a4a" stroke-width="3" stroke-linecap="round"/>
+      </g>
+      <!-- tablero de evaluación -->
+      <g transform="translate(36 30)">
+        <rect width="62" height="74" rx="8" fill="#fff"/>
+        <rect x="20" y="-6" width="22" height="12" rx="3" fill="#c9a227"/>
+        <path d="M12 24l5 5 9-10M12 44l5 5 9-10" stroke="#1f8a5b" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M32 26h18M32 46h18M12 62h38" stroke="#9aa7b5" stroke-width="3.5" stroke-linecap="round"/>
+      </g>
+    </svg>
+  </div>
 </div>
+
+<main>
+  <section>
+    <div class="wrap">
+      <div class="titulo-sec"><h2>Qué incluye MAID</h2></div>
+      <div class="rasgos">
+        <div class="rasgo">
+          <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#1f8a5b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h12l6 6v20H8z"/><path d="M20 3v6h6M12 16h10M12 21h10M12 26h6"/></svg></div>
+          <h3>Ahorra horas de papeleo</h3>
+          <p>Genera tu carátula NEM lista para Word en minutos: campo formativo, PDA, ejes articuladores y todo lo que pide el plan de estudios.</p>
+        </div>
+        <div class="rasgo">
+          <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#1f8a5b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="24" height="22" rx="3"/><path d="M4 12h24M12 12v15M9 19l2 2 3-4"/></svg></div>
+          <h3>La rúbrica se califica sola</h3>
+          <p>Pon tus criterios (trae 3 de base, agrega los que quieras) y la app calcula promedios, nivel de desempeño y gráficas al instante.</p>
+        </div>
+        <div class="rasgo">
+          <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#1f8a5b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 27h24"/><path d="M8 22v-6M14 22V10M20 22v-9M26 22V6"/></svg></div>
+          <h3>Seguimiento físico real</h3>
+          <p>IMC antes/después con la batería ALPHA-Fitness, individual y por grupo, con gráficas de aspecto profesional.</p>
+        </div>
+        <div class="rasgo">
+          <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#1f8a5b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="4"/><circle cx="22" cy="12" r="3"/><path d="M4 26c0-4 3-7 7-7s7 3 7 7M18 26c0-3 2-6 5-6s5 2 5 5"/></svg></div>
+          <h3>Todos tus grupos en un solo lugar</h3>
+          <p>Tablero comparativo entre grupos, sincronizado en la nube entre tu celular y tu computadora.</p>
+        </div>
+        <div class="rasgo">
+          <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#1f8a5b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4v16M10 14l6 6 6-6"/><path d="M5 22v5h22v-5"/></svg></div>
+          <h3>Exporta cuando quieras</h3>
+          <p>A Word para tu carátula, a Excel para tu rúbrica e IMC.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:8px">
+    <div class="wrap">
+      <div class="titulo-sec"><h2>Cómo obtener tu licencia</h2></div>
+      <div class="pasos">
+        <div class="paso"><h3>Realiza tu transferencia</h3><p>Paga $300 MXN con los datos bancarios de abajo.</p></div>
+        <div class="paso"><h3>Envía tu solicitud</h3><p>Llena el formulario con el correo con el que crearás tu cuenta.</p></div>
+        <div class="paso"><h3>Recibe tu código</h3><p>Al confirmar tu pago te enviamos tu código de licencia por correo.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:8px">
+    <div class="wrap bloque">
+      <div class="tarjeta precio">
+        <h2 style="font-size:18px;color:var(--azul)">Precio</h2>
+        <div class="monto">$300 <small>MXN / ciclo escolar</small></div>
+        <p style="margin:10px 0 0;color:var(--gris)">Haz tu transferencia a estos datos:</p>
+        <dl class="datos">
+          <dt>Banco</dt><dd>BBVA</dd>
+          <dt>Tarjeta</dt><dd>4152 3145 0071 3550</dd>
+          <dt>CLABE</dt><dd>012760015976085207</dd>
+          <dt>A nombre de</dt><dd>Carlos Emmanuel Arana Solorio</dd>
+        </dl>
+      </div>
+      <div class="tarjeta apk">
+        <h2 style="font-size:18px;color:var(--azul)">Descarga la app</h2>
+        <p>Descarga el archivo e instálalo en tu celular Android. La primera vez Android te va a preguntar si confías en el origen: elige «Instalar de todos modos» o «Permitir», es normal.</p>
+        <a class="btn-sec" href="MAID.apk" download>⬇ Descargar MAID (.apk)</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-zona" id="solicitud">
+    <div class="wrap">
+      <div class="titulo-sec"><h2>Tus datos</h2></div>
+      <form id="formSolicitud">
+        <label for="fNombre">Nombre completo</label>
+        <input id="fNombre" type="text" required autocomplete="name">
+
+        <label for="fCorreo">Correo <span class="opc">(con este vas a crear tu cuenta en MAID)</span></label>
+        <input id="fCorreo" type="email" required autocomplete="email">
+
+        <label for="fEscuela">Escuela <span class="opc">(opcional)</span></label>
+        <input id="fEscuela" type="text" autocomplete="organization">
+
+        <label for="fCiclo">Ciclo escolar</label>
+        <input id="fCiclo" type="text" required placeholder="2026-2027">
+
+        <label for="fNotas">Notas <span class="opc">(opcional — ej. ya hice la transferencia hoy a las 3 pm)</span></label>
+        <textarea id="fNotas"></textarea>
+
+        <button id="btnEnviar" type="submit">Enviar solicitud</button>
+        <div id="msg" class="msg"></div>
+
+        <p class="nota">Después de confirmar tu pago, te haremos llegar tu código de licencia al correo que escribiste arriba para que puedas crear tu cuenta en MAID.</p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <b>MAID</b> · Método de Aprendizaje por Impulsos Didácticos<br>
+  Herramienta de apoyo para docentes de Educación Física
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
