@@ -2,10 +2,13 @@
 <html lang="es"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Impulso EF · Generador de Carátula NEM</title>
-<meta name="theme-color" content="#7a3fc9">
+<meta name="theme-color" content="#0f2a4a">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -41,6 +44,31 @@ textarea{min-height:60px;resize:vertical}
 .info{font-size:.85rem;background:var(--bg);border-left:3px solid var(--accent);padding:8px 10px;border-radius:4px;margin-top:6px;min-height:1.2em}
 button{background:var(--accent);color:var(--bg);border:none;padding:10px 16px;border-radius:6px;font-size:.9rem;cursor:pointer;font-family:inherit}
 pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px}
+
+/* ===== Tema Impulso EF (mismo estilo que la página de licencias) ===== */
+:root{--bg:#f4f6f9;--fg:#1d2733;--card:#ffffff;--line:#dde3ea;--accent:#0f2a4a;--accent2:#1f8a5b;--verde:#1f8a5b;--dorado:#c9a227;--azul2:#163b66;--sombra:0 1px 2px rgba(15,42,74,.06),0 4px 14px rgba(15,42,74,.06)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1522;--fg:#e8edf3;--card:#12233a;--line:#22344d;--accent:#6cc59a;--accent2:#e0b84a;--verde:#6cc59a;--dorado:#e0b84a;--azul2:#6cc59a;--sombra:none}}
+:root[data-theme="dark"]{--bg:#0b1522;--fg:#e8edf3;--card:#12233a;--line:#22344d;--accent:#6cc59a;--accent2:#e0b84a;--verde:#6cc59a;--dorado:#e0b84a;--azul2:#6cc59a;--sombra:none}
+body{font-family:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.5}
+@media screen{body::before{content:"";position:fixed;top:0;left:0;right:0;height:5px;z-index:9999;background:linear-gradient(90deg,#0f2a4a 0 60%,#1f8a5b 60% 85%,#c9a227 85%)}}
+h1,h2,h3,.card h2,button,.tabbtn{font-family:Montserrat,"Source Sans 3",system-ui,sans-serif}
+h1{font-size:1.55rem;font-weight:800;color:var(--accent);letter-spacing:-.01em}
+.sub{color:var(--accent2);font-weight:600}
+.card{border-radius:14px;padding:20px 22px}
+@media screen{.card{box-shadow:var(--sombra)}}
+.card h2{display:flex;align-items:center;gap:10px;font-size:1.05rem;font-weight:700;margin-bottom:14px}
+.card h2::before{content:"";flex:none;width:5px;height:20px;border-radius:3px;background:var(--verde)}
+label{font-weight:600;color:var(--accent);font-size:.88rem}
+select,textarea,input{padding:10px 12px;border-radius:8px;font-size:.95rem}
+select:focus,textarea:focus,input:focus{outline:3px solid rgba(31,138,91,.25);border-color:var(--verde)}
+button{border-radius:8px;font-weight:600;font-size:.88rem;padding:10px 16px;transition:filter .15s,transform .05s}
+button:hover{filter:brightness(1.12)}
+button:active{transform:translateY(1px)}
+.tabbtn{border-radius:999px;padding:7px 13px;font-weight:600}
+.tabbtn.on{background:var(--accent);border-color:var(--accent)}
+.chip{border-radius:999px}
+.info{border-left-color:var(--verde);border-radius:6px}
+pre{border-radius:8px}
 </style></head>
 <body>
 <div id="authGate" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
