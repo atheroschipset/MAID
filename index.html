@@ -723,6 +723,20 @@ let currentGroupKey = null;
 let currentEscuelaId = null;
 let escuelasCache = [];
 let gruposMetaCache = {};
+/* Guarda los datos de UN grupo leyendo primero la copia más reciente de la nube,
+   para no pisar lo que otro dispositivo (o una carga de respaldo) haya guardado. */
+async function guardarMetaGrupo(k, cambios, borrar){
+ let remoto = {};
+ try{ remoto = (await dbGet('grupos_meta')) || {}; }catch(e){ remoto = Object.assign({}, gruposMetaCache); }
+ if(borrar){ delete remoto[k]; }
+ else {
+  const limpio = Object.assign({}, cambios);
+  if(!limpio.escuela_id) delete limpio.escuela_id;
+  remoto[k] = Object.assign({}, remoto[k], limpio);
+ }
+ gruposMetaCache = remoto;
+ await dbSet('grupos_meta', remoto);
+}
 async function cargarGrupo(){
  const k = groupKey();
  if(k === currentGroupKey){
@@ -733,8 +747,7 @@ async function cargarGrupo(){
  await loadAlumnos(); await loadRubrica(); await loadImc(); await loadSesiones(); await loadAsistencia();
  if(typeof actualizarIndicadores==='function') actualizarIndicadores();
  if(!gruposMetaCache[k] || gruposMetaCache[k].escuela_id !== currentEscuelaId){
-  gruposMetaCache[k] = Object.assign({}, gruposMetaCache[k], { escuela_id: currentEscuelaId });
-  dbSet('grupos_meta', gruposMetaCache);
+  if(currentEscuelaId) guardarMetaGrupo(k, { escuela_id: currentEscuelaId });
  }
  const hEl = el('horarioGrupo'); if(hEl) hEl.value = (gruposMetaCache[k] && gruposMetaCache[k].horario) || '';
 }
@@ -764,7 +777,7 @@ async function dashboardEliminarGrupo(key){
  if(!confirm(`¿Eliminar el grupo "${nivelLabel} · ${g} — ${grp==='general'?'(sin grupo)':grp}"?\n\nSe borrarán sus alumnos, rúbrica, IMC y sesiones. Esto no se puede deshacer.`)) return;
  try{
   await conTiempoLimite(dbDeleteGroup(key), 8000);
-  if(gruposMetaCache[key]){ delete gruposMetaCache[key]; await dbSet('grupos_meta', gruposMetaCache); }
+  if(gruposMetaCache[key]){ await guardarMetaGrupo(key, null, true); }
   if(key === currentGroupKey) currentGroupKey = null;
   await loadDashboard();
  }catch(e){
@@ -928,7 +941,7 @@ function ponerModoOrganizacion(m, guardar){
  if(guardar){
   const k = groupKey();
   gruposMetaCache[k] = Object.assign({}, gruposMetaCache[k], { organizacion: m });
-  dbSet('grupos_meta', gruposMetaCache);
+  guardarMetaGrupo(k, { organizacion: m });
   saveSesiones();
  }
 }
@@ -1732,8 +1745,7 @@ function volverEscuelas(){
 }
 async function guardarHorarioGrupo(){
  const k = currentGroupKey || groupKey();
- gruposMetaCache[k] = Object.assign({}, gruposMetaCache[k], { horario: el('horarioGrupo').value.trim(), escuela_id: currentEscuelaId });
- await dbSet('grupos_meta', gruposMetaCache);
+ await guardarMetaGrupo(k, { horario: el('horarioGrupo').value.trim(), escuela_id: currentEscuelaId });
 }
 async function loadDashboard(){
  const grid = el('dashboardGrid');
