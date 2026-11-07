@@ -79,6 +79,35 @@ html{overflow-x:clip}
 body{font-family:Barlow,"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif}
 h1,h2,h3,.card h2,button,.tabbtn{font-family:"Barlow Condensed",Barlow,system-ui,sans-serif}
 @media screen{body::before{display:none}}
+/* Organizar planeación */
+.segmento{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.segmento label{display:inline-flex;align-items:center;margin:0;padding:9px 16px;min-height:42px;border:1px solid var(--line);border-radius:999px;cursor:pointer;font-family:"Barlow Condensed",Barlow,sans-serif;font-weight:700;font-size:1rem;letter-spacing:.03em;color:var(--fg);opacity:1;position:relative}
+.segmento input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.segmento label:has(input:checked){background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.segmento label:has(input:focus-visible){outline:3px solid color-mix(in srgb,var(--verde) 45%,transparent);outline-offset:2px}
+.grupoSesionHdr{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin:22px 0 12px;padding:12px 16px;border-radius:14px;background:var(--card);border:1px solid var(--line);border-left:6px solid var(--verde)}
+.grupoSesionHdr b{font-family:"Barlow Condensed",Barlow,sans-serif;font-size:1.3rem;text-transform:uppercase;letter-spacing:.03em;color:var(--accent)}
+.grupoSesionHdr span{font-size:.9rem;opacity:.8}
+.grupoSesionHdr button{min-height:38px;padding:6px 12px;background:transparent;color:var(--accent);border:1px solid var(--line)}
+#sesionesContainer:not(.modo-unidad) .campoUnidad{display:none}
+
+/* Ficha de salud */
+.btnSalud{min-height:34px;padding:4px 10px;font-size:.9rem;background:transparent;color:var(--accent);border:1px solid var(--line);white-space:nowrap}
+.btnSalud.ok{border-color:var(--verde);color:var(--verde)}
+.btnSalud.alerta{background:#e8892b;border-color:#e8892b;color:#1d1405}
+#saludModal{display:none;position:fixed;inset:0;z-index:210;background:rgba(0,0,0,.6);align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow-y:auto}
+#saludModal .card{max-width:560px;width:100%;margin:auto 0}
+#saludModal .fila2{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0 12px}
+.avisoSalud{font-size:.88rem;line-height:1.45;background:color-mix(in srgb,var(--verde) 12%,transparent);border-left:4px solid var(--verde);padding:10px 12px;border-radius:8px;margin:4px 0 6px}
+.autorizacion{display:flex !important;gap:10px;align-items:flex-start;font-weight:600;margin-top:12px !important;cursor:pointer}
+.autorizacion input{width:22px;height:22px;flex:none;margin:1px 0 0}
+.saludAlertas{display:flex;flex-direction:column;gap:8px}
+.saludAlerta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:var(--bg)}
+.saludAlerta b{margin-right:4px}
+.tagSalud{font-size:.8rem;font-weight:600;padding:2px 9px;border-radius:999px;background:#e8892b;color:#1d1405}
+.tagSalud.suave{background:var(--line);color:var(--fg)}
+@media print{.noPrint,#saludModal,.btnSalud,.colSalud{display:none !important}}
+
 h1{font-weight:800;text-transform:uppercase;letter-spacing:.01em;line-height:1}
 button{font-weight:700;font-size:1rem;letter-spacing:.03em;border-radius:10px;min-height:42px}
 .tabbtn{font-size:.95rem;letter-spacing:.02em;min-height:36px}
@@ -155,6 +184,37 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
   <p style="font-size:.9rem;line-height:1.5;opacity:.9">Tu cuenta de Impulso EF ya está activada en otro dispositivo. Cada licencia solo puede usarse en uno a la vez.</p>
   <p style="font-size:.9rem;line-height:1.5;font-weight:600">Por favor comunícate con el desarrollador de la app para resolver tu caso.</p>
   <div style="margin-top:14px"><button type="button" onclick="document.getElementById('deviceLockModal').style.display='none'">Entendido</button></div>
+ </div>
+</div>
+<div id="saludModal" role="dialog" aria-modal="true" aria-labelledby="saludTitulo">
+ <div class="card">
+  <h2 id="saludTitulo">Ficha de salud</h2>
+  <div class="avisoSalud"><b>Datos sensibles de un menor.</b> Regístralos solo con autorización de su madre, padre o tutor. Solo tú puedes verlos desde tu cuenta; úsalos para adaptar la clase y para actuar en una emergencia. No se imprimen ni se exportan a Excel.</div>
+  <label class="autorizacion" for="sAut"><input type="checkbox" id="sAut"> Cuento con la autorización del tutor para registrar estos datos</label>
+  <fieldset id="saludCampos" style="border:0;padding:0;margin:0">
+  <label for="sApt">Actividad física</label>
+  <select id="sApt"><option value="sin">Sin restricción</option><option value="adapt">Con adaptaciones</option><option value="no">No apto temporalmente</option></select>
+  <label for="sCond">Condición física y limitaciones</label>
+  <textarea id="sCond" placeholder="Ej. Asma leve: evitar carreras largas en días fríos. Lesión de tobillo hasta diciembre."></textarea>
+  <label for="sAlerg">Alergias</label>
+  <input type="text" id="sAlerg" placeholder="Ej. Picadura de abeja, cacahuate">
+  <label for="sTrast">Trastornos o diagnósticos</label>
+  <textarea id="sTrast" placeholder="Ej. TDAH, epilepsia, diabetes tipo 1"></textarea>
+  <label for="sMed">Medicamentos</label>
+  <input type="text" id="sMed" placeholder="Ej. Inhalador de salbutamol en su mochila">
+  <div class="fila2">
+   <div><label for="sContNom">Contacto de emergencia</label><input type="text" id="sContNom" placeholder="Nombre"></div>
+   <div><label for="sContPar">Parentesco</label><input type="text" id="sContPar" placeholder="Ej. Mamá"></div>
+  </div>
+  <label for="sContTel">Teléfono de emergencia</label>
+  <input type="tel" id="sContTel" placeholder="Ej. 664 123 4567">
+  </fieldset>
+  <div class="info" id="saludMsg" style="display:none"></div>
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+   <button type="button" onclick="guardarSalud()">Guardar ficha</button>
+   <button type="button" onclick="cerrarSalud()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">Cancelar</button>
+   <button type="button" id="btnBorrarSalud" onclick="borrarSalud()" style="background:transparent;color:#c23b3b;border:1px solid var(--line);margin-left:auto">Borrar ficha</button>
+  </div>
  </div>
 </div>
 <div id="escuelasView" style="display:none">
@@ -326,6 +386,10 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <input type="text" id="horarioGrupo" placeholder="Ej. Lun y Mié 7:00-7:50" onchange="guardarHorarioGrupo()">
 </div>
 
+<div class="card noPrint" data-tab="alumnos" id="saludResumenCard">
+<h2>Alertas de salud del grupo</h2>
+<div class="saludAlertas" id="saludResumen"></div>
+</div>
 <div class="card" data-tab="alumnos">
 <h2>8. Lista de alumnos</h2>
 <div class="info">Esta lista se guarda en este dispositivo y alimentará más adelante la rúbrica de evaluación y el IMC.</div>
@@ -375,6 +439,16 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <div style="max-width:500px;margin-top:12px"><canvas id="chartImc"></canvas></div>
 </div>
 
+<div class="card" data-tab="sesion" id="orgCard">
+<h2>Organizar la planeación</h2>
+<div class="segmento" role="radiogroup" aria-label="Organizar las sesiones">
+<label><input type="radio" name="orgModo" value="sesion" checked> Por sesión</label>
+<label><input type="radio" name="orgModo" value="semana"> Por semana</label>
+<label><input type="radio" name="orgModo" value="unidad"> Por unidad didáctica</label>
+</div>
+<div class="info" id="orgInfo"></div>
+</div>
+<datalist id="listaUnidades"></datalist>
 <div id="sesionesContainer" data-tab="sesion"></div>
 <button type="button" onclick="addSesion()" style="margin-bottom:16px" data-tab="sesion">+ Agregar apartado de sesión</button>
 
@@ -615,6 +689,7 @@ function buildSesionBlock(idx, datos){
  div.className='card'; div.dataset.sesion=idx;
  const v = k => (datos[k]!==undefined && datos[k]!==null) ? datos[k] : '';
  div.innerHTML=`<h2>Sesión <span class="sn">${idx+1}</span> <button type="button" onclick="removeSesion(this)" style="float:right;background:transparent;color:var(--accent);border:1px solid var(--line);padding:2px 8px">Quitar</button></h2>
+<div class="campoUnidad"><label>Unidad didáctica</label><input type="text" class="unidad" list="listaUnidades" placeholder="Ej. Unidad 1: Juegos cooperativos" value="${String(v('unidad')).replace(/"/g,'&quot;')}"></div>
 <label>N° de sesión</label><input type="number" class="sesionN" min="1" value="${v('sesionN')||idx+1}">
 <label>Fecha</label><input type="date" class="fecha" value="${v('fecha')}">
 <label>Hora</label><input type="time" class="hora" value="${v('hora')}">
@@ -626,8 +701,10 @@ function buildSesionBlock(idx, datos){
  return div;
 }
 function addSesion(datos){
- el('sesionesContainer').appendChild(buildSesionBlock(sesionCount, datos));
+ const nueva = buildSesionBlock(sesionCount, datos);
+ el('sesionesContainer').appendChild(nueva);
  sesionCount++;
+ if(!cargandoSesiones){ aplicarOrganizacion(); if(datos) nueva.scrollIntoView({block:'center'}); }
  renumSesiones();
  saveSesiones();
  if(typeof actualizarIndicadores==='function') actualizarIndicadores();
@@ -635,16 +712,18 @@ function addSesion(datos){
 function removeSesion(btn){
  const card=btn.closest('[data-sesion]');
  card.remove();
+ aplicarOrganizacion();
  renumSesiones();
  saveSesiones();
  if(typeof actualizarIndicadores==='function') actualizarIndicadores();
 }
 function renumSesiones(){
- const cards=[...el('sesionesContainer').children];
+ const cards=sesionCards();
  cards.forEach((c,i)=>{ c.querySelector('.sn').textContent=i+1; });
 }
 function recogerSesiones(){
- return [...el('sesionesContainer').children].map(c=>({
+ return sesionCards().map(c=>({
+  unidad: c.querySelector('.unidad') ? c.querySelector('.unidad').value.trim() : '',
   sesionN: c.querySelector('.sesionN').value,
   fecha: c.querySelector('.fecha').value,
   hora: c.querySelector('.hora').value,
@@ -660,9 +739,111 @@ const saveSesiones = debounce(saveSesionesNow, 700);
 async function loadSesiones(){
  el('sesionesContainer').innerHTML=''; sesionCount=0;
  const datos = (await dbGet('sesiones_'+groupKey())) || [];
- if(datos.length===0){ addSesion(); return; }
- datos.forEach(d=>addSesion(d));
+ cargandoSesiones = true;
+ if(datos.length===0){ addSesion(); } else { datos.forEach(d=>addSesion(d)); }
+ cargandoSesiones = false;
+ ponerModoOrganizacion(modoGuardado(), false);
 }
+
+/* ===== Organizar planeación: por sesión, semana o unidad didáctica ===== */
+let cargandoSesiones = false;
+let modoOrg = 'sesion';
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function sesionCards(){ return [...el('sesionesContainer').querySelectorAll('[data-sesion]')]; }
+function lunesDe(fechaStr){
+ if(!fechaStr) return null;
+ const d = new Date(fechaStr+'T12:00:00'); if(isNaN(d)) return null;
+ const dia = (d.getDay()+6)%7; d.setDate(d.getDate()-dia); return d;
+}
+function iso(d){ return d.toISOString().slice(0,10); }
+function rangoSemana(lunes){
+ const vie = new Date(lunes); vie.setDate(vie.getDate()+4);
+ if(lunes.getMonth()===vie.getMonth()) return `${lunes.getDate()} al ${vie.getDate()} de ${MESES[vie.getMonth()]}`;
+ return `${lunes.getDate()} de ${MESES[lunes.getMonth()]} al ${vie.getDate()} de ${MESES[vie.getMonth()]}`;
+}
+function grupoDeSesion(card){
+ if(modoOrg==='semana'){
+  const l = lunesDe(card.querySelector('.fecha').value);
+  if(!l) return { clave:'~sinfecha', titulo:'Sin fecha', sub:'' };
+  return { clave: iso(l), titulo:'Semana', sub: rangoSemana(l) };
+ }
+ if(modoOrg==='unidad'){
+  const u = (card.querySelector('.unidad').value||'').trim();
+  if(!u) return { clave:'~sinunidad', titulo:'Sin unidad', sub:'' };
+  return { clave: 'u:'+u.toLowerCase(), titulo: u, sub:'' };
+ }
+ return null;
+}
+function modoGuardado(){
+ const k = groupKey();
+ const m = gruposMetaCache[k] && gruposMetaCache[k].organizacion;
+ return (m==='semana'||m==='unidad') ? m : 'sesion';
+}
+function ponerModoOrganizacion(m, guardar){
+ modoOrg = m;
+ document.querySelectorAll('input[name="orgModo"]').forEach(r=>{ r.checked = (r.value===m); });
+ const info = {
+  sesion: 'Tus sesiones van una tras otra, en el orden en que las agregas.',
+  semana: 'Las sesiones se agrupan por semana (lunes a viernes) según su fecha. Las que no tienen fecha quedan al final.',
+  unidad: 'Escribe la unidad didáctica en cada sesión y se agrupan por unidad. Usa "+ Sesión en esta unidad" para agregar dentro de una.'
+ }[m];
+ el('orgInfo').textContent = info;
+ el('sesionesContainer').classList.toggle('modo-unidad', m==='unidad');
+ aplicarOrganizacion();
+ renumSesiones();
+ if(guardar){
+  const k = groupKey();
+  gruposMetaCache[k] = Object.assign({}, gruposMetaCache[k], { organizacion: m });
+  dbSet('grupos_meta', gruposMetaCache);
+  saveSesiones();
+ }
+}
+function aplicarOrganizacion(){
+ const cont = el('sesionesContainer');
+ cont.querySelectorAll('.grupoSesionHdr').forEach(h=>h.remove());
+ const cards = sesionCards();
+ // lista de unidades para autocompletar
+ const unidades = [...new Set(cards.map(c=>(c.querySelector('.unidad').value||'').trim()).filter(Boolean))];
+ el('listaUnidades').innerHTML = unidades.map(u=>`<option value="${u.replace(/"/g,'&quot;')}"></option>`).join('');
+ if(modoOrg==='sesion'){ cards.forEach(c=>cont.appendChild(c)); return; }
+ const grupos = new Map();
+ cards.forEach(c=>{ const g = grupoDeSesion(c); if(!grupos.has(g.clave)) grupos.set(g.clave, {info:g, cards:[]}); grupos.get(g.clave).cards.push(c); });
+ let claves = [...grupos.keys()];
+ if(modoOrg==='semana'){
+  claves.sort((a,b)=> a.startsWith('~')?1 : b.startsWith('~')?-1 : a<b?-1:a>b?1:0);
+  grupos.forEach(g=>g.cards.sort((x,y)=>{ const fx=x.querySelector('.fecha').value+' '+x.querySelector('.hora').value, fy=y.querySelector('.fecha').value+' '+y.querySelector('.hora').value; return fx<fy?-1:fx>fy?1:0; }));
+ } else {
+  claves.sort((a,b)=> a.startsWith('~')?1 : b.startsWith('~')?-1 : 0);
+ }
+ let nSemana = 0;
+ claves.forEach(k=>{
+  const g = grupos.get(k);
+  const hdr = document.createElement('div');
+  hdr.className = 'grupoSesionHdr';
+  let titulo = g.info.titulo;
+  if(modoOrg==='semana' && !k.startsWith('~')){ nSemana++; titulo = 'Semana '+nSemana; }
+  const n = g.cards.length;
+  const left = document.createElement('div');
+  const b = document.createElement('b'); b.textContent = titulo; left.appendChild(b);
+  const sp = document.createElement('span'); sp.textContent = (g.info.sub? ' · '+g.info.sub : '') + ` · ${n} ${n===1?'sesión':'sesiones'}`; left.appendChild(sp);
+  hdr.appendChild(left);
+  if(modoOrg==='unidad' && !k.startsWith('~')){
+   const btn = document.createElement('button'); btn.type='button'; btn.textContent='+ Sesión en esta unidad';
+   btn.onclick = ()=>{ addSesion({ unidad: g.info.titulo }); };
+   hdr.appendChild(btn);
+  }
+  cont.appendChild(hdr);
+  g.cards.forEach(c=>cont.appendChild(c));
+ });
+}
+document.querySelectorAll('input[name="orgModo"]').forEach(r=>r.addEventListener('change', ()=>{ if(r.checked) ponerModoOrganizacion(r.value, true); }));
+el('sesionesContainer').addEventListener('change', e=>{
+ if(e.target.matches('.fecha, .hora, .unidad') && modoOrg!=='sesion'){
+  const card = e.target.closest('[data-sesion]');
+  aplicarOrganizacion(); renumSesiones();
+  if(card) card.scrollIntoView({block:'nearest'});
+ }
+});
 el('sesionesContainer').addEventListener('input', saveSesiones);
 el('sesionesContainer').addEventListener('change', saveSesiones);
 el('sesionesContainer').addEventListener('input', ()=>{ if(typeof actualizarIndicadores==='function') actualizarIndicadores(); });
@@ -679,7 +860,7 @@ async function saveAlumnosNow(){ await dbSet('alumnos_'+groupKey(), alumnos); }
 const saveAlumnos = debounce(saveAlumnosNow, 700);
 function renderAlumnos(){
  const t = el('alumnosTabla');
- t.innerHTML = '<tr><th style="text-align:left;padding:4px">N°</th><th style="text-align:left;padding:4px">Nombre del alumno</th><th>Edad</th><th>Sexo</th><th></th></tr>' +
+ t.innerHTML = '<tr><th style="text-align:left;padding:4px">N°</th><th style="text-align:left;padding:4px">Nombre del alumno</th><th>Edad</th><th>Sexo</th><th class="colSalud">Salud</th><th></th></tr>' +
   alumnos.map((a,i)=>`<tr>
    <td style="padding:4px">${i+1}</td>
    <td style="padding:4px"><input type="text" value="${(a.nombre||'').replace(/"/g,'&quot;')}" oninput="alumnos[${i}].nombre=this.value;saveAlumnos();const rr=document.getElementById('rrow${i}');if(rr)rr.children[1].textContent=this.value||'(sin nombre)';const ir=document.getElementById('irow${i}');if(ir)ir.children[1].textContent=this.value||'(sin nombre)';" style="width:100%"></td>
@@ -689,10 +870,76 @@ function renderAlumnos(){
      <option value="H" ${a.sexo==='H'?'selected':''}>H</option>
      <option value="M" ${a.sexo==='M'?'selected':''}>M</option>
    </select></td>
+   <td style="padding:4px" class="colSalud">${botonSalud(a,i)}</td>
    <td style="padding:4px"><button type="button" onclick="removeAlumno(${i})" style="background:transparent;color:var(--accent);border:1px solid var(--line);padding:2px 8px">×</button></td>
   </tr>`).join('');
  if(typeof actualizarIndicadores==='function') actualizarIndicadores();
+ renderSaludResumen();
 }
+
+/* ===== Ficha de salud por alumno (solo la ve el docente) ===== */
+let saludIdx = null;
+function escH(t){ return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function saludTieneDatos(sd){ return !!(sd && (sd.apt && sd.apt!=='sin' || ['cond','alerg','trast','med','contNom','contTel'].some(k=>(sd[k]||'').trim()))); }
+function saludAlertas(sd){
+ const t=[]; if(!sd) return t;
+ if(sd.apt==='no') t.push({txt:'No apto temporalmente'}); else if(sd.apt==='adapt') t.push({txt:'Con adaptaciones'});
+ if((sd.alerg||'').trim()) t.push({txt:'Alergia: '+sd.alerg.trim()});
+ if((sd.trast||'').trim()) t.push({txt:'Diagnóstico'});
+ if((sd.med||'').trim()) t.push({txt:'Medicamento'});
+ if((sd.cond||'').trim() && sd.apt==='sin') t.push({txt:'Condición', suave:true});
+ return t;
+}
+function botonSalud(a,i){
+ const sd = a && a.salud;
+ const estado = saludAlertas(sd).some(x=>!x.suave) ? 'alerta' : (saludTieneDatos(sd) ? 'ok' : '');
+ const txt = estado==='alerta' ? 'Ver ficha ⚠' : (estado==='ok' ? 'Ver ficha' : '+ Ficha');
+ return `<button type="button" class="btnSalud ${estado}" onclick="abrirSalud(${i})" aria-label="Ficha de salud de ${escH((a&&a.nombre)||'alumno '+(i+1))}">${txt}</button>`;
+}
+function renderSaludResumen(){
+ const cont = el('saludResumen'); if(!cont) return;
+ const lista = alumnos.map((a,i)=>({a,i,t:saludAlertas(a&&a.salud)})).filter(x=>x.t.length);
+ if(!lista.length){ cont.innerHTML = '<div class="info">Ningún alumno tiene alertas de salud registradas. Usa el botón "+ Ficha" en la lista para agregar la de cada alumno.</div>'; return; }
+ cont.innerHTML = lista.map(x=>`<div class="saludAlerta" role="button" tabindex="0" onclick="abrirSalud(${x.i})" onkeydown="if(event.key==='Enter')abrirSalud(${x.i})"><b>${x.i+1}. ${escH(x.a.nombre||'(sin nombre)')}</b>${x.t.map(t=>`<span class="tagSalud${t.suave?' suave':''}">${escH(t.txt)}</span>`).join('')}</div>`).join('');
+}
+function saludHabilitar(){ el('saludCampos').disabled = !el('sAut').checked; }
+function abrirSalud(i){
+ saludIdx = i;
+ const a = alumnos[i]||{}; const sd = a.salud||{};
+ el('saludTitulo').textContent = 'Ficha de salud — ' + ((a.nombre||'').trim() || ('Alumno '+(i+1)));
+ el('sAut').checked = !!sd.aut;
+ el('sApt').value = sd.apt||'sin';
+ el('sCond').value = sd.cond||''; el('sAlerg').value = sd.alerg||''; el('sTrast').value = sd.trast||''; el('sMed').value = sd.med||'';
+ el('sContNom').value = sd.contNom||''; el('sContPar').value = sd.contPar||''; el('sContTel').value = sd.contTel||'';
+ el('saludMsg').style.display='none';
+ el('btnBorrarSalud').style.display = a.salud ? '' : 'none';
+ saludHabilitar();
+ el('saludModal').style.display='flex';
+ el('sAut').focus();
+}
+function cerrarSalud(){ el('saludModal').style.display='none'; saludIdx=null; }
+async function guardarSalud(){
+ if(saludIdx===null || !alumnos[saludIdx]) return;
+ if(!el('sAut').checked){ const m=el('saludMsg'); m.style.display='block'; m.textContent='Marca la casilla de autorización del tutor para poder guardar la ficha.'; return; }
+ alumnos[saludIdx].salud = {
+  aut:true, apt: el('sApt').value,
+  cond: el('sCond').value.trim(), alerg: el('sAlerg').value.trim(), trast: el('sTrast').value.trim(), med: el('sMed').value.trim(),
+  contNom: el('sContNom').value.trim(), contPar: el('sContPar').value.trim(), contTel: el('sContTel').value.trim(),
+  actualizado: new Date().toISOString().slice(0,10)
+ };
+ cerrarSalud(); renderAlumnos();
+ try{ await saveAlumnosNow(); }catch(e){ alert('No se pudo guardar la ficha. Revisa tu conexión e intenta de nuevo.'); }
+}
+async function borrarSalud(){
+ if(saludIdx===null || !alumnos[saludIdx]) return;
+ if(!confirm('¿Borrar la ficha de salud de este alumno?')) return;
+ delete alumnos[saludIdx].salud;
+ cerrarSalud(); renderAlumnos();
+ try{ await saveAlumnosNow(); }catch(e){}
+}
+el('sAut').addEventListener('change', saludHabilitar);
+el('saludModal').addEventListener('click', e=>{ if(e.target.id==='saludModal') cerrarSalud(); });
+el('saludModal').addEventListener('keydown', e=>{ if(e.key==='Escape') cerrarSalud(); });
 function syncRubricaLen(){ if(typeof rubrica!=='undefined'){ rubrica.length=alumnos.length; if(typeof renderRubrica==='function') renderRubrica(); } if(typeof imc!=='undefined'){ imc.length=alumnos.length; if(typeof renderImc==='function') renderImc(); } }
 function addAlumno(){ alumnos.push(blankAlumno()); saveAlumnos(); renderAlumnos(); syncRubricaLen(); }
 function removeAlumno(i){ alumnos.splice(i,1); saveAlumnos(); renderAlumnos(); syncRubricaLen(); }
@@ -966,9 +1213,12 @@ function generar(){
  if(!el('justif').value.trim()){
    el('justif').value=`La actividad se justifica porque, dentro de ${c.toLowerCase()} (${n} ${g}), el impulso didáctico MAID exige a NNA resolver un reto motriz vinculado a ${ejes.toLowerCase()}, desarrollando ${cap.toLowerCase()} mediante ${el('estilo').value.toLowerCase()}.`;
  }
- const sesionesTxt=[...el('sesionesContainer').children].map(c=>{
+ let grupoPrevTxt=null;
+ const sesionesTxt=sesionCards().map(c=>{
    const q=sel=>c.querySelector(sel).value||'(sin indicar)';
-   return `--- SESIÓN ${q('.sesionN')} ---
+   const gInfo=grupoDeSesion(c); let enc='';
+   if(gInfo && gInfo.clave!==grupoPrevTxt){ grupoPrevTxt=gInfo.clave; enc=`=== ${gInfo.titulo.toUpperCase()}${gInfo.sub?' ('+gInfo.sub+')':''} ===\n\n`; }
+   return enc+`--- SESIÓN ${q('.sesionN')} ---
 FECHA: ${q('.fecha')}
 HORA: ${q('.hora')}
 TIEMPO: ${q('.tiempoDur')}
@@ -1084,7 +1334,7 @@ function cargarRespaldo(file){
  reader.readAsText(file);
 }
 function getDiarioEntries(){
- return [...el('sesionesContainer').children].map(c=>({
+ return sesionCards().map(c=>({
   sesionN: c.querySelector('.sesionN').value || '?',
   fecha: c.querySelector('.fecha').value || '(sin fecha)',
   texto: c.querySelector('.diarioCampo').value || ''
