@@ -736,6 +736,8 @@ async function guardarMetaGrupo(k, cambios, borrar){
  }
  gruposMetaCache = remoto;
  await dbSet('grupos_meta', remoto);
+ // Copia por grupo: las versiones viejas de la app no la sobrescriben
+ try{ if(borrar){ await dbSet('meta_'+k, null); } else { await dbSet('meta_'+k, remoto[k]); } }catch(e){}
 }
 async function cargarGrupo(){
  const k = groupKey();
@@ -1776,6 +1778,16 @@ async function loadDashboard(){
    }
   }
  });
+ // Reconstruye la escuela/horario de cada grupo desde su copia propia (meta_<grupo>)
+ let metaReparado = false;
+ (data||[]).forEach(row=>{
+  if(row.storage_key.indexOf('meta_')===0 && row.value && typeof row.value==='object'){
+   const k = row.storage_key.slice(5);
+   const actual = gruposMetaCache[k] || {};
+   if(!actual.escuela_id && row.value.escuela_id){ gruposMetaCache[k] = Object.assign({}, row.value, actual, { escuela_id: row.value.escuela_id, horario: actual.horario || row.value.horario || '' }); metaReparado = true; }
+  }
+ });
+ if(metaReparado){ try{ await dbSet('grupos_meta', gruposMetaCache); }catch(e){} }
  lastDashboardGroups = groups;
  const keys = Object.keys(groups).filter(k=>k.split('_').length>=3 && gruposMetaCache[k] && gruposMetaCache[k].escuela_id===currentEscuelaId);
  if(keys.length===0){
