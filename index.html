@@ -262,11 +262,11 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
   <label for="sApt">Actividad física</label>
   <select id="sApt"><option value="sin">Sin restricción</option><option value="adapt">Con adaptaciones</option><option value="no">No apto temporalmente</option></select>
   <label for="sCond">Condición física y limitaciones</label>
-  <textarea id="sCond" placeholder="Ej. Asma leve: evitar carreras largas en días fríos. Lesión de tobillo hasta diciembre."></textarea>
+  <textarea id="sCond" placeholder="Ej. Asma leve: evitar carreras largas en días fríos. Epilepsia controlada. Lesión de tobillo hasta diciembre."></textarea>
   <label for="sAlerg">Alergias</label>
   <input type="text" id="sAlerg" placeholder="Ej. Picadura de abeja, cacahuate">
-  <label for="sTrast">Trastornos o diagnósticos</label>
-  <textarea id="sTrast" placeholder="Ej. TDAH, epilepsia, diabetes tipo 1"></textarea>
+  <label for="sTrast">Barreras para el aprendizaje y la participación (BAP)</label>
+  <textarea id="sTrast" placeholder="Ej. TDAH, discapacidad auditiva, dificultad en la coordinación motriz"></textarea>
   <label for="sMed">Medicamentos</label>
   <input type="text" id="sMed" placeholder="Ej. Inhalador de salbutamol en su mochila">
   <div class="fila2">
@@ -964,7 +964,7 @@ function saludAlertas(sd){
  const t=[]; if(!sd) return t;
  if(sd.apt==='no') t.push({txt:'No apto temporalmente'}); else if(sd.apt==='adapt') t.push({txt:'Con adaptaciones'});
  if((sd.alerg||'').trim()) t.push({txt:'Alergia: '+sd.alerg.trim()});
- if((sd.trast||'').trim()) t.push({txt:'Diagnóstico'});
+ if((sd.trast||'').trim()) t.push({txt:'BAP'});
  if((sd.med||'').trim()) t.push({txt:'Medicamento'});
  if((sd.cond||'').trim() && sd.apt==='sin') t.push({txt:'Condición', suave:true});
  return t;
