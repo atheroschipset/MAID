@@ -88,6 +88,30 @@
   .msg.err{padding:12px 14px;background:var(--err-bg);color:var(--err);border:1px solid #f3c3bf}
   .nota{color:var(--gris);font-size:15px;margin-top:18px}
 
+
+  /* Manual desplegable */
+  .manual{max-width:820px}
+  .manual > details{background:var(--blanco);border:1px solid var(--linea);border-radius:14px;overflow:hidden}
+  .manual > details > summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;font-family:Montserrat,sans-serif;font-weight:700;font-size:18px;color:var(--azul)}
+  .manual summary::-webkit-details-marker{display:none}
+  .manual summary::after{content:"";flex:none;width:10px;height:10px;border-right:2.5px solid currentColor;border-bottom:2.5px solid currentColor;transform:rotate(45deg);transition:transform .2s;margin-right:4px}
+  .manual details[open] > summary::after{transform:rotate(-135deg)}
+  .manual summary:focus-visible{outline:3px solid rgba(31,138,91,.35);outline-offset:-3px}
+  .manual > details > summary small{display:block;font-family:"Source Sans 3",sans-serif;font-weight:400;font-size:15px;color:var(--gris);margin-top:2px}
+  .manual .cuerpo{padding:0 22px 18px;display:flex;flex-direction:column;gap:10px}
+  .manual .cuerpo details{border:1px solid var(--linea);border-radius:10px;background:var(--fondo)}
+  .manual .cuerpo details > summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;font-family:Montserrat,sans-serif;font-weight:600;font-size:16px;color:var(--azul)}
+  .manual .seccion{padding:0 16px 14px;color:var(--tinta);font-size:16px}
+  .manual .seccion p{margin:0 0 10px}
+  .manual .seccion h4{font-family:Montserrat,sans-serif;font-size:15px;color:var(--azul);margin:14px 0 6px}
+  .manual .seccion ul,.manual .seccion ol{margin:0 0 10px;padding-left:1.3em}
+  .manual .seccion li{margin-bottom:5px}
+  .manual .tabla{overflow-x:auto;margin:0 0 10px}
+  .manual table{border-collapse:collapse;width:100%;min-width:520px;font-size:15px;background:var(--blanco)}
+  .manual th,.manual td{border:1px solid var(--linea);padding:8px 10px;text-align:left;vertical-align:top}
+  .manual th{background:var(--verde-claro);color:var(--azul);font-family:Montserrat,sans-serif;font-size:14px}
+  @media (prefers-reduced-motion:reduce){.manual summary::after{transition:none}}
+
   footer{background:var(--azul);color:#b9c7d8;font-size:14px;text-align:center;padding:22px 16px}
   footer b{color:#fff}
 
@@ -228,6 +252,97 @@
         <h2 style="font-size:18px;color:var(--azul)">Descarga la app</h2>
         <p>Descarga el archivo e instálalo en tu celular Android. La primera vez Android te va a preguntar si confías en el origen: elige «Instalar de todos modos» o «Permitir», es normal.</p>
         <a class="btn-sec" href="Impulso%20EF.apk" download="Impulso EF.apk">⬇ Descargar Impulso EF (.apk)</a>
+      </div>
+    </div>
+  </section>
+
+
+  <section id="manual" style="padding-top:8px">
+    <div class="wrap">
+      <div class="titulo-sec"><h2>Manual de uso</h2></div>
+      <div class="manual">
+       <details>
+        <summary><span>Manual de Impulso EF<small>Toca para ver cómo usar la app, paso a paso</small></span></summary>
+        <div class="cuerpo">
+<details><summary>Bienvenida</summary><div class="seccion"><p>Impulso EF es tu cuaderno de Educación Física, pero en el celular y en la computadora. Aquí armas tu unidad didáctica alineada a la Nueva Escuela Mexicana, planeas tus sesiones, pasas lista, evalúas con el Lente MAID y das seguimiento al IMC de tus alumnos, todo en un mismo lugar.</p>
+<p>La hicimos pensando en el día a día de quien da clase en el patio: poco tiempo, muchos grupos y mucho papeleo. Por eso casi todo se llena con listas desplegables, la justificación se escribe sola y tus datos se guardan en automático en la nube. Si cambias de celular o abres la app en la computadora de la escuela, ahí sigue todo.</p>
+<p>No necesitas leer este manual de corrido. Úsalo como consulta: ve directo a la parte que necesitas y sigue los pasos con la app abierta.</p></div></details>
+<details><summary>Antes de empezar</summary><div class="seccion"><p>Necesitas dos cosas: la app y un código de licencia. La licencia dura un ciclo escolar y se pide en esta misma página, en el formulario de abajo.</p>
+<p><b>En la computadora</b> no instalas nada. Abre <a href="https://atheroschipset.github.io/MAID/">atheroschipset.github.io/MAID</a> en Chrome, Edge o Brave y guárdala en favoritos.</p>
+<h4>En el celular Android</h4>
+<ol><li>Toca <b>Descargar Impulso EF (.apk)</b> en esta página.</li>
+<li>Abre el archivo descargado. Si Android pregunta si confías en el origen, elige <b>Permitir</b> o <b>Instalar de todos modos</b>. Es normal: la app no viene de la Play Store.</li>
+<li>Si tenías la versión anterior (el icono café que dice MAID), desinstálala primero. Tus datos no se pierden, están en la nube.</li></ol>
+<h4>Tu primera vez</h4>
+<ol><li>Escribe tu correo y una contraseña.</li>
+<li>En <b>Código de licencia</b> pon el que te llegó por correo, por ejemplo MAID-2026-XXXX.</li>
+<li>Toca <b>Crear cuenta</b>. Las siguientes veces solo usas <b>Iniciar sesión</b>.</li></ol>
+<p>Una licencia funciona en un dispositivo a la vez. Si te sale el aviso de “Licencia en otro dispositivo”, comunícate con el desarrollador para liberarla.</p></div></details>
+<details><summary>Tus escuelas y tus grupos</summary><div class="seccion"><p>La app se organiza como tu trabajo real: primero la escuela, dentro de ella tus grupos y dentro de cada grupo su unidad, sus alumnos y sus evaluaciones.</p>
+<h4>Registrar tu escuela</h4>
+<ol><li>En <b>Mis escuelas</b> toca <b>+ Nueva escuela</b>.</li>
+<li>Llena el nombre, el nivel, la clave CCT y el turno.</li>
+<li>Escribe tu <b>nombre como docente de Educación Física</b>. Es el que aparece en tus planeaciones impresas y en el Word, así que ponlo como lo firmas.</li>
+<li>Toca <b>Guardar escuela</b>.</li></ol>
+<p>¿Te equivocaste en algo? Usa el lápiz ✎ de la tarjeta de la escuela para corregirlo. Si das clase en dos escuelas, registra las dos: cada una lleva sus propios grupos.</p>
+<h4>Crear un grupo</h4>
+<ol><li>Toca la tarjeta de tu escuela para entrar a su tablero.</li>
+<li>Toca <b>+ Nuevo grupo</b>.</li>
+<li>En la pestaña 1 elige el grado y, en la pestaña 4, escribe la letra del grupo y su horario.</li></ol>
+<p>El grupo aparece en el tablero en cuanto le agregas alumnos. Para volver a él, solo toca su tarjeta.</p>
+<p><b>El tablero</b> te muestra todos tus grupos de esa escuela y, abajo, una <b>comparativa entre grupos</b> para ver de un vistazo qué grupo va mejor o necesita más apoyo.</p></div></details>
+<details><summary>Tu unidad didáctica, paso a paso</summary><div class="seccion"><p>Al abrir un grupo verás ocho pestañas numeradas. Ve en orden la primera vez; después entra solo a la que necesites. Las etiquetitas junto a cada pestaña te dicen cuánto llevas.</p>
+<div class="tabla"><table><thead><tr><th>Pestaña</th><th>Qué llenas</th><th>Lo que hace la app por ti</th></tr></thead><tbody>
+<tr><td>1. Marco curricular</td><td>Nivel, grado y campo formativo; el elemento de la competencia motriz (ADN de la EF) y su aspecto</td><td>Te muestra la descripción del campo y del aspecto</td></tr>
+<tr><td>2. Contenido y ejes</td><td>El contenido y el eje articulador con su aspecto en EF</td><td>Llena el proceso de desarrollo de aprendizaje (PDA) del grado</td></tr>
+<tr><td>3. Metodología</td><td>Perspectiva pedagógica, estrategia, estilo de enseñanza, capacidades e instrumento de evaluación</td><td>Explica cada opción debajo de la lista</td></tr>
+</tbody></table></div>
+<p>No hay botón de guardar: cada cambio se guarda solo en la nube.</p></div></details>
+<details><summary>La planeación de tus sesiones</summary><div class="seccion"><p>En la pestaña <b>4. Planeación</b> describes el impulso didáctico MAID, el grupo y cada una de tus clases.</p>
+<ol><li>Escribe la <b>tarea o impulso didáctico</b>. La justificación se redacta sola cuando generas el resumen, y la puedes editar.</li>
+<li>Pon la <b>letra del grupo</b> y su <b>horario</b>.</li>
+<li>Llena la primera sesión: fecha, hora, duración y las actividades de <b>inicio, desarrollo y cierre</b>.</li>
+<li>Toca <b>+ Agregar apartado de sesión</b> para cada clase nueva. Si te sobra una, usa <b>Quitar</b>.</li></ol>
+<h4>Organiza a tu manera</h4>
+<ul><li><b>Por sesión:</b> una tras otra, en el orden en que las agregas.</li>
+<li><b>Por semana:</b> se agrupan solas de lunes a viernes según su fecha. Las que no tienen fecha quedan al final.</li>
+<li><b>Por unidad didáctica:</b> cada sesión tiene un campo “Unidad didáctica” y se agrupan por unidad. Con <b>+ Sesión en esta unidad</b> agregas una clase dentro de esa unidad.</li></ul>
+<p>Cada sesión tiene también un espacio de <b>diario de campo</b> para anotar, después de la clase, lo que de verdad pasó.</p></div></details>
+<details><summary>Tus alumnos</summary><div class="seccion"><p>Todo lo de tus alumnos parte de una sola lista. Escríbela una vez y la rúbrica, el IMC y las fichas de salud toman los nombres de ahí.</p>
+<h4>La lista (pestaña 5)</h4>
+<ul><li>Escribe nombre, edad y sexo de cada alumno. La edad y el sexo sirven para clasificar bien el IMC.</li>
+<li><b>+ Agregar alumno</b> suma un renglón; <b>Generar N alumnos vacíos</b> crea varios de golpe.</li></ul>
+<h4>La rúbrica Lente MAID</h4>
+<ul><li>Calificas del 1 al 3. Trae tres criterios de base: participación activa, aprendizaje significativo y motivación percibida. Con <b>+ Agregar criterio</b> sumas los tuyos.</li>
+<li>La app saca el promedio de cada alumno y su nivel de desempeño (Bajo, Medio-bajo, Medio, Medio-alto o Alto), con gráficas del grupo.</li></ul>
+<h4>La ficha de salud</h4>
+<ul><li>Junto a cada alumno está el botón <b>+ Ficha</b>: actividad física (sin restricción, con adaptaciones o no apto por ahora), condición física y limitaciones, alergias, barreras para el aprendizaje y la participación (BAP), medicamentos y contacto de emergencia.</li>
+<li>Para guardarla marcas que cuentas con la <b>autorización del tutor</b>.</li>
+<li>Arriba de la lista aparecen las <b>Alertas de salud del grupo</b>. Solo tú ves estas fichas; no se imprimen ni salen en el Excel.</li></ul>
+<h4>El IMC (pestaña 6)</h4>
+<ul><li>Capturas peso (kg), talla (cm) y cintura (cm) al inicio y al final, siguiendo la batería ALPHA-Fitness.</li>
+<li>El IMC se clasifica por edad y sexo con los cortes para niños y adolescentes, no con los de adultos.</li></ul></div></details>
+<details><summary>Entregar tu trabajo</summary><div class="seccion"><ul><li><b>Resumen (pestaña 7):</b> toca <b>Generar resumen para la carátula</b>. Empieza con tu escuela, CCT, turno y tu nombre como docente.</li>
+<li><b>Word:</b> <b>Descargar en Word (.docx)</b> te da la carátula lista para ajustar.</li>
+<li><b>Excel:</b> <b>Descargar Rúbrica e IMC (.xlsx)</b> te da calificaciones y medidas del grupo.</li>
+<li><b>Imprimir:</b> imprime la planeación con un encabezado con escuela, CCT, docente, turno y grado y grupo. También puedes guardarla como PDF.</li>
+<li><b>Diario de campo (pestaña 8):</b> junta tus notas de todas las sesiones y las descarga en un PDF.</li></ul></div></details>
+<details><summary>Configuración</summary><div class="seccion"><p>El engrane ⚙ de la esquina superior derecha abre tu configuración.</p>
+<ul><li><b>Modo oscuro:</b> desliza el interruptor. La app se acuerda de tu elección.</li>
+<li><b>Descargar respaldo:</b> guarda en un archivo una copia de todo lo de tu cuenta. Hazlo al cierre de cada trimestre y guárdalo en un lugar seguro, porque trae datos personales de tus alumnos.</li>
+<li><b>Cargar respaldo:</b> sube a tu cuenta un respaldo que hayas descargado antes.</li></ul></div></details>
+<details><summary>Cuando algo no sale</summary><div class="seccion"><div class="tabla"><table><thead><tr><th>Lo que te pasa</th><th>Qué hacer</th></tr></thead><tbody>
+<tr><td>No veo un cambio nuevo de la app</td><td>Cierra la app por completo y vuelve a abrirla. En la computadora recarga con Ctrl + F5, o toca <b>Buscar actualización</b></td></tr>
+<tr><td>En el celular la app se ve como página de computadora</td><td>En Chrome: Configuración › Configuración de sitios › Sitio de escritorio, y apágalo</td></tr>
+<tr><td>Me sale “Licencia en otro dispositivo”</td><td>Comunícate con el desarrollador para liberarla</td></tr>
+<tr><td>Me pide un código de licencia</td><td>Tu licencia venció o no está activa. Escribe el código nuevo y toca <b>Activar licencia</b></td></tr>
+<tr><td>No aparece mi grupo en el tablero</td><td>Agrega al menos un alumno en la pestaña 5</td></tr>
+<tr><td>La ficha de salud no se guarda</td><td>Marca la casilla de autorización del tutor</td></tr>
+<tr><td>En la hoja impresa sale “(sin registrar)”</td><td>En Mis escuelas toca el lápiz ✎ y escribe tu nombre de docente</td></tr>
+<tr><td>La app se cerró sola en el celular</td><td>No pierdes nada: ya se guardó. Si pasa seguido, actualiza Chrome</td></tr>
+</tbody></table></div></div></details>
+        </div>
+       </details>
       </div>
     </div>
   </section>
