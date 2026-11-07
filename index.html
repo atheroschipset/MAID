@@ -123,6 +123,36 @@ h1,h2,h3,.card h2,button,.tabbtn{font-family:"Barlow Condensed",Barlow,system-ui
  .encabezadoImpresion .ttl{font-family:"Barlow Condensed",Arial,sans-serif;font-weight:800;font-size:15pt;text-transform:uppercase;margin-bottom:4px}
  .encabezadoImpresion .grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 18px}
 }
+
+/* Asistencia */
+.asisTop{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 16px}
+.asisTop input{max-width:220px}
+.asisAcciones{display:flex;flex-wrap:wrap;gap:8px}
+.asisLeyenda{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:.9rem;margin:12px 0 4px}
+.asisChip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;font-family:"Barlow Condensed",Barlow,sans-serif;font-weight:800;font-size:.95rem;color:#fff}
+.asisChip.A,.asisBtn.on.A{background:#2f8a3e;border-color:#2f8a3e;color:#fff}
+.asisChip.R,.asisBtn.on.R{background:#e8892b;border-color:#e8892b;color:#1d1405}
+.asisChip.F,.asisBtn.on.F{background:#c23b3b;border-color:#c23b3b;color:#fff}
+.asisChip.J,.asisBtn.on.J{background:#3d78c2;border-color:#3d78c2;color:#fff}
+.asisLista{display:flex;flex-direction:column;margin-top:8px}
+.asisFila{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line)}
+.asisFila .num{width:26px;flex:none;text-align:right;opacity:.6;font-variant-numeric:tabular-nums}
+.asisFila .nom{flex:1;min-width:0;font-size:.95rem;line-height:1.25;overflow-wrap:anywhere}
+.asisBtns{display:flex;gap:4px;flex:none}
+.asisBtn{width:38px;height:38px;min-height:38px;padding:0;border-radius:9px;background:transparent;color:var(--fg);border:1px solid var(--line);font-family:"Barlow Condensed",Barlow,sans-serif;font-weight:800;font-size:1rem}
+.asisBtn:hover{filter:none;border-color:var(--verde)}
+.asisKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.asisKpi{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg)}
+.asisKpi b{display:block;font-family:"Barlow Condensed",Barlow,sans-serif;font-size:1.9rem;line-height:1.05;font-variant-numeric:tabular-nums}
+.asisKpi span{font-size:.85rem;opacity:.8}
+.asisTabla{width:100%;border-collapse:collapse;margin-top:8px;font-size:.9rem;font-variant-numeric:tabular-nums}
+.asisTabla th,.asisTabla td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center}
+.asisTabla th:nth-child(2),.asisTabla td:nth-child(2){text-align:left}
+.asisTabla td.bajo{color:#e8892b;font-weight:700}
+.asisBarra{display:inline-block;width:60px;height:8px;border-radius:4px;background:var(--line);vertical-align:middle;margin-right:6px;overflow:hidden}
+.asisBarra i{display:block;height:100%;background:var(--verde)}
+.asisTabla td.bajo .asisBarra i{background:#e8892b}
+@media (max-width:420px){.asisBtn{width:34px;height:34px;min-height:34px}.asisFila{gap:6px}}
 /* Organizar planeación */
 .segmento{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
 .segmento label{display:inline-flex;align-items:center;margin:0;padding:9px 16px;min-height:42px;border:1px solid var(--line);border-radius:999px;cursor:pointer;font-family:"Barlow Condensed",Barlow,sans-serif;font-weight:700;font-size:1rem;letter-spacing:.03em;color:var(--fg);opacity:1;position:relative}
@@ -357,6 +387,7 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <button type="button" class="tabbtn" onclick="showTab('imc')">6. IMC <span class="tabBadge" id="badgeImc"></span></button>
 <button type="button" class="tabbtn" onclick="showTab('resumen')">7. Resumen</button>
 <button type="button" class="tabbtn" onclick="showTab('diario')">8. Diario de campo <span class="tabBadge" id="badgeDiario"></span></button>
+<button type="button" class="tabbtn" onclick="showTab('asistencia')">9. Asistencia <span class="tabBadge" id="badgeAsistencia"></span></button>
 </div>
 
 <div class="card" data-tab="curricular">
@@ -527,6 +558,30 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <button type="button" onclick="descargarDiarioPDF()" style="margin-top:12px">📄 Descargar PDF del diario</button>
 </div>
 
+<div class="card" data-tab="asistencia">
+<h2>Pase de lista</h2>
+<div class="asisTop">
+ <div><label for="asisFecha">Fecha de la clase</label><input type="date" id="asisFecha"></div>
+ <div class="asisAcciones">
+  <button type="button" onclick="asistenciaTodos('A')">Todos asistieron</button>
+  <button type="button" onclick="asistenciaBorrarDia()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">Borrar este día</button>
+ </div>
+</div>
+<div class="asisLeyenda"><span class="asisChip A">A</span> Asistió <span class="asisChip R">R</span> Retardo <span class="asisChip F">F</span> Falta <span class="asisChip J">J</span> Justificada</div>
+<div class="info" id="asisDiaInfo"></div>
+<div class="asisLista" id="asisLista"></div>
+</div>
+<div class="card" data-tab="asistencia">
+<h2>Asistencia del grupo</h2>
+<div class="asisKpis" id="asisKpis"></div>
+<div style="max-width:640px;margin-top:12px"><canvas id="chartAsistencia"></canvas></div>
+</div>
+<div class="card" data-tab="asistencia">
+<h2>Porcentaje por alumno</h2>
+<div class="info">El porcentaje cuenta asistencias y retardos como presentes. Las faltas justificadas no cuentan en contra. Se marca en naranja a quien va por debajo del 80&nbsp;%.</div>
+<div style="overflow-x:auto"><table class="asisTabla" id="asisTabla"></table></div>
+</div>
+
 <div id="updateBanner" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--accent);color:var(--bg);padding:10px max(16px,env(safe-area-inset-left,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right,0px));align-items:center;justify-content:space-between;gap:10px;font-family:inherit;flex-wrap:wrap">
  <span>🔄 Hay una nueva versión de Impulso EF disponible.</span>
  <button type="button" onclick="location.reload()" style="background:var(--bg);color:var(--accent);border:none;padding:6px 14px;border-radius:6px;font-weight:bold">Actualizar ahora</button>
@@ -675,7 +730,7 @@ async function cargarGrupo(){
   return;
  }
  currentGroupKey = k;
- await loadAlumnos(); await loadRubrica(); await loadImc(); await loadSesiones();
+ await loadAlumnos(); await loadRubrica(); await loadImc(); await loadSesiones(); await loadAsistencia();
  if(typeof actualizarIndicadores==='function') actualizarIndicadores();
  if(!gruposMetaCache[k] || gruposMetaCache[k].escuela_id !== currentEscuelaId){
   gruposMetaCache[k] = Object.assign({}, gruposMetaCache[k], { escuela_id: currentEscuelaId });
@@ -698,7 +753,7 @@ async function dbSet(key, value){
 async function dbDeleteGroup(groupSuffix){
  const { data: userData } = await sb.auth.getUser();
  if(!userData || !userData.user) return;
- const prefixes = ['alumnos_','rubrica_','imc_','sesiones_','criterios_'];
+ const prefixes = ['alumnos_','rubrica_','imc_','sesiones_','criterios_','asistencia_'];
  const keys = prefixes.map(p=>p+groupSuffix);
  await sb.from('maid_data').delete().eq('user_id', userData.user.id).in('storage_key', keys);
 }
@@ -1021,7 +1076,7 @@ el('saludModal').addEventListener('click', e=>{ if(e.target.id==='saludModal') c
 el('saludModal').addEventListener('keydown', e=>{ if(e.key==='Escape') cerrarSalud(); });
 function syncRubricaLen(){ if(typeof rubrica!=='undefined'){ rubrica.length=alumnos.length; if(typeof renderRubrica==='function') renderRubrica(); } if(typeof imc!=='undefined'){ imc.length=alumnos.length; if(typeof renderImc==='function') renderImc(); } }
 function addAlumno(){ alumnos.push(blankAlumno()); saveAlumnos(); renderAlumnos(); syncRubricaLen(); }
-function removeAlumno(i){ alumnos.splice(i,1); saveAlumnos(); renderAlumnos(); syncRubricaLen(); }
+function removeAlumno(i){ if(typeof asistenciaQuitarAlumno==='function') asistenciaQuitarAlumno(i); alumnos.splice(i,1); saveAlumnos(); renderAlumnos(); syncRubricaLen(); }
 function generarAlumnos(){
  const n = parseInt(el('genN').value)||42;
  alumnos = Array.from({length:n}, blankAlumno);
@@ -1454,6 +1509,90 @@ function descargarDiarioPDF(){
  });
  doc.save('diario_campo_'+(el('gradoGrupoInfo').textContent||'grupo')+'.pdf');
 }
+
+/* ===== Asistencia ===== */
+var asistencia = {};
+var chartAsis = null;
+const ASIS_CODES = ['A','R','F','J'];
+async function loadAsistencia(){
+ asistencia = (await dbGet('asistencia_'+groupKey())) || {};
+ const f = el('asisFecha'); if(f && !f.value) f.value = new Date().toLocaleDateString('en-CA');
+ if(document.querySelector('[data-tab="asistencia"].tab-active')) renderAsistencia();
+ actualizarIndicadores();
+}
+async function saveAsistenciaNow(){ await dbSet('asistencia_'+groupKey(), asistencia); }
+const saveAsistencia = debounce(saveAsistenciaNow, 600);
+function asisDia(){ return el('asisFecha').value; }
+function asisMarcar(i, code){
+ const d = asisDia(); if(!d) return;
+ if(!asistencia[d]) asistencia[d] = alumnos.map(()=>null);
+ const arr = asistencia[d];
+ while(arr.length < alumnos.length) arr.push(null);
+ arr[i] = (arr[i]===code) ? null : code;
+ if(arr.every(v=>!v)) delete asistencia[d];
+ saveAsistencia(); renderAsistencia();
+}
+function asistenciaTodos(code){
+ const d = asisDia(); if(!d){ alert('Elige la fecha de la clase.'); return; }
+ asistencia[d] = alumnos.map(()=>code);
+ saveAsistencia(); renderAsistencia();
+}
+function asistenciaBorrarDia(){
+ const d = asisDia(); if(!d || !asistencia[d]) return;
+ if(!confirm('¿Borrar el pase de lista del '+d+'?')) return;
+ delete asistencia[d]; saveAsistencia(); renderAsistencia();
+}
+function asistenciaQuitarAlumno(i){
+ Object.keys(asistencia).forEach(d=>{ if(Array.isArray(asistencia[d])) asistencia[d].splice(i,1); });
+ saveAsistencia();
+}
+function asisStats(){
+ const fechas = Object.keys(asistencia).filter(d=>Array.isArray(asistencia[d])).sort();
+ const porAlumno = alumnos.map((a,i)=>{
+  const c = {A:0,R:0,F:0,J:0};
+  fechas.forEach(d=>{ const v = asistencia[d][i]; if(v && c[v]!==undefined) c[v]++; });
+  const base = c.A + c.R + c.F;
+  return { c, pct: base ? Math.round((c.A+c.R)*1000/base)/10 : null };
+ });
+ const porFecha = fechas.map(d=>{
+  const arr = asistencia[d]; let pres=0, base=0;
+  arr.forEach(v=>{ if(v==='A'||v==='R'){pres++;base++;} else if(v==='F') base++; });
+  return { d, pct: base ? Math.round(pres*1000/base)/10 : null };
+ });
+ const tot = {A:0,R:0,F:0,J:0}; porAlumno.forEach(x=>ASIS_CODES.forEach(k=>tot[k]+=x.c[k]));
+ const baseG = tot.A+tot.R+tot.F;
+ return { fechas, porAlumno, porFecha, tot, pctGrupo: baseG ? Math.round((tot.A+tot.R)*1000/baseG)/10 : null };
+}
+function fechaCorta(d){ const [y,m,dd]=d.split('-'); return `${parseInt(dd)} ${MESES[parseInt(m)-1].slice(0,3)}`; }
+function renderAsistencia(){
+ if(!el('asisLista')) return;
+ const d = asisDia();
+ const dia = (d && asistencia[d]) || [];
+ const marcados = dia.filter(Boolean).length;
+ el('asisDiaInfo').textContent = !d ? 'Elige la fecha de la clase.' : (marcados ? `${marcados} de ${alumnos.length} alumnos marcados este día. Toca de nuevo una letra para quitarla.` : 'Aún no pasas lista este día. Usa "Todos asistieron" y luego marca solo las faltas y retardos.');
+ el('asisLista').innerHTML = alumnos.map((a,i)=>`<div class="asisFila"><span class="num">${i+1}</span><span class="nom">${escH((a&&a.nombre)||'(sin nombre)')}</span><span class="asisBtns" role="group" aria-label="Asistencia de ${escH((a&&a.nombre)||'alumno '+(i+1))}">${ASIS_CODES.map(k=>`<button type="button" class="asisBtn ${dia[i]===k?'on '+k:''}" aria-pressed="${dia[i]===k}" title="${{A:'Asistió',R:'Retardo',F:'Falta',J:'Justificada'}[k]}" onclick="asisMarcar(${i},'${k}')">${k}</button>`).join('')}</span></div>`).join('') || '<div class="info">Primero agrega alumnos en la pestaña 5.</div>';
+ const st = asisStats();
+ const enRiesgo = st.porAlumno.filter(x=>x.pct!==null && x.pct<80).length;
+ el('asisKpis').innerHTML = `
+  <div class="asisKpi"><b>${st.pctGrupo===null?'—':st.pctGrupo+' %'}</b><span>Asistencia del grupo</span></div>
+  <div class="asisKpi"><b>${st.fechas.length}</b><span>Clases con lista</span></div>
+  <div class="asisKpi"><b>${st.tot.F}</b><span>Faltas en total</span></div>
+  <div class="asisKpi"><b style="color:${enRiesgo?'#e8892b':'inherit'}">${enRiesgo}</b><span>Alumnos bajo 80 %</span></div>`;
+ el('asisTabla').innerHTML = '<tr><th>N°</th><th>Alumno</th><th>A</th><th>R</th><th>F</th><th>J</th><th>Asistencia</th></tr>' +
+  st.porAlumno.map((x,i)=>{
+   const bajo = x.pct!==null && x.pct<80;
+   return `<tr><td>${i+1}</td><td>${escH((alumnos[i]&&alumnos[i].nombre)||'(sin nombre)')}</td><td>${x.c.A}</td><td>${x.c.R}</td><td>${x.c.F}</td><td>${x.c.J}</td><td class="${bajo?'bajo':''}">${x.pct===null?'—':`<span class="asisBarra"><i style="width:${x.pct}%"></i></span>${x.pct} %`}</td></tr>`;
+  }).join('');
+ if(typeof Chart==='undefined') return;
+ const css = getComputedStyle(document.documentElement);
+ const fg = css.getPropertyValue('--fg'), grid = css.getPropertyValue('--line'), verde = css.getPropertyValue('--verde');
+ const data = { labels: st.porFecha.map(x=>fechaCorta(x.d)), datasets:[{ label:'% de asistencia', data: st.porFecha.map(x=>x.pct), borderColor: verde, backgroundColor: verde, tension:.25, pointRadius:4, fill:false }] };
+ const opts = { scales:{ y:{ min:0, max:100, ticks:{color:fg, callback:v=>v+' %'}, grid:{color:grid} }, x:{ ticks:{color:fg}, grid:{display:false} } }, plugins:{ legend:{display:false}, title:{display:true, text:'Asistencia del grupo por clase', color:fg} } };
+ if(chartAsis){ chartAsis.data=data; chartAsis.options=opts; chartAsis.update(); }
+ else { chartAsis = new Chart(el('chartAsistencia').getContext('2d'), { type:'line', data, options:opts }); }
+ actualizarIndicadores();
+}
+el('asisFecha').addEventListener('change', renderAsistencia);
 function setBadge(id, text, state){
  const b = document.getElementById(id);
  if(!b) return;
@@ -1475,6 +1614,8 @@ function actualizarIndicadores(){
  setBadge('badgeSesion', sesionesN, sesionesN>0?'full':'empty');
  const diarioN = (typeof getDiarioEntries==='function') ? getDiarioEntries().length : 0;
  setBadge('badgeDiario', diarioN, diarioN>0?'full':'empty');
+ const asisN = (typeof asistencia==='object' && asistencia) ? Object.keys(asistencia).length : 0;
+ setBadge('badgeAsistencia', asisN, asisN>0?'full':'empty');
 }
 let lastDashboardGroups = {};
 let chartComparativa = null;
@@ -1736,10 +1877,11 @@ function volverTablero(){
 function showTab(name){
  document.querySelectorAll('[data-tab]').forEach(elm=>elm.classList.toggle('tab-active', elm.dataset.tab===name));
  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('on'));
- const idx = ['curricular','contenido','metodologia','sesion','alumnos','imc','resumen','diario'].indexOf(name);
+ const idx = ['curricular','contenido','metodologia','sesion','alumnos','imc','resumen','diario','asistencia'].indexOf(name);
  const btns = document.querySelectorAll('.tabbtn');
  if(btns[idx]) btns[idx].classList.add('on');
  if(name==='diario' && typeof renderDiario==='function') renderDiario();
+ if(name==='asistencia' && typeof renderAsistencia==='function') renderAsistencia();
  window.scrollTo(0,0);
 }
 const SUPA_URL = 'https://kpeftmcawokbhxwtnnsw.supabase.co';
