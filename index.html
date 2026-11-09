@@ -1972,6 +1972,10 @@ async function mostrarSegunLicencia(){
   const r = await conTiempoLimite(sb.rpc('licencia_estado', { p_device_id: getDeviceId() }), 8000);
   data = r.data; error = r.error;
  }catch(e){ error = e; }
+ if(error && !data){
+  const yaVisible = (el('appWrap') && el('appWrap').style.display!=='none') || (document.getElementById('dashboardView').style.display!=='none') || (el('escuelasView') && el('escuelasView').style.display!=='none');
+  if(yaVisible) return;
+ }
  if(error || !data || !data.valida){
   el('appWrap').style.display='none';
   document.getElementById('dashboardView').style.display='none';
@@ -2017,6 +2021,7 @@ async function canjearLicenciaDesdeGate(){
  await mostrarSegunLicencia();
 }
 sb.auth.onAuthStateChange(async (event, session) => {
+ if(event === 'TOKEN_REFRESHED') return;
  if(session){
   el('authGate').style.display='none';
   try{
