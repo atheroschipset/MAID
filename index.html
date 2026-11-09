@@ -1233,13 +1233,13 @@ Distribución: ${dist}`;
  const accent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent2');
  const critData = {
   labels: criterios.map(c=>c.label),
-  datasets: [{ label:'Promedio grupal', data:avgsPorCriterio.map(v=>v??0), backgroundColor: criterios.map((_,i)=> i%2===0? accent: accent2) }]
+  datasets: [{ label:'Promedio grupal', data:avgsPorCriterio.map(v=>v??0), backgroundColor: criterios.map((_,i)=> ['#4FC3F7','#FFB74D','#AB47BC'][i%3]) }]
  };
- const critOpts = { scales:{ y:{ min:0, max:3, ticks:{color:fgColor}, grid:{color:gridColor} }, x:{ ticks:{color:fgColor}, grid:{display:false} } }, plugins:{ legend:{display:false}, title:{display:true, text:'Promedio grupal por criterio', color:fgColor} } };
+ const critOpts = { animation:false, resizeDelay:200, scales:{ y:{ min:0, max:3, ticks:{color:fgColor}, grid:{color:gridColor} }, x:{ ticks:{color:fgColor}, grid:{display:false} } }, plugins:{ legend:{display:false}, title:{display:true, text:'Promedio grupal por criterio', color:fgColor} } };
  if(chartCrit){ chartCrit.data=critData; chartCrit.options=critOpts; chartCrit.update(); }
  else { chartCrit = new Chart(el('chartCriterios').getContext('2d'), { type:'bar', data:critData, options:critOpts }); }
  const distData = { labels:niveles, datasets:[{ label:'N° de alumnos', data:distCounts, backgroundColor:accent2 }] };
- const distOpts = { scales:{ y:{ beginAtZero:true, ticks:{color:fgColor, stepSize:1}, grid:{color:gridColor} }, x:{ ticks:{color:fgColor}, grid:{display:false} } }, plugins:{ legend:{display:false}, title:{display:true, text:'Distribución de alumnos por nivel (grupal)', color:fgColor} } };
+ const distOpts = { animation:false, resizeDelay:200, scales:{ y:{ beginAtZero:true, ticks:{color:fgColor, stepSize:1}, grid:{color:gridColor} }, x:{ ticks:{color:fgColor}, grid:{display:false} } }, plugins:{ legend:{display:false}, title:{display:true, text:'Distribución de alumnos por nivel (grupal)', color:fgColor} } };
  if(chartDist){ chartDist.data=distData; chartDist.options=distOpts; chartDist.update(); }
  else { chartDist = new Chart(el('chartDistribucion').getContext('2d'), { type:'bar', data:distData, options:distOpts }); }
 }
