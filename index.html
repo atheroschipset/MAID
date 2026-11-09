@@ -216,6 +216,9 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 .gate .info{background:rgba(255,255,255,.08);color:#fff;border-left-color:var(--lima)}
 .gate button{background:var(--lima);color:var(--tinta)}
 .gate button[style*="transparent"]{background:transparent !important;color:#fff !important;border-color:rgba(255,255,255,.45) !important}
+.sesion-selector{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.sesion-selector button{padding:5px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer;font-family:inherit;font-size:.85rem}
+.sesion-selector button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 </style></head>
 <body>
 <div id="authGate" class="gate" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
@@ -546,6 +549,7 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <div class="info" id="orgInfo"></div>
 </div>
 <datalist id="listaUnidades"></datalist>
+<div class="sesion-selector" id="sesionSelector" data-tab="sesion"></div>
 <div id="sesionesContainer" data-tab="sesion"></div>
 <button type="button" onclick="addSesion()" style="margin-bottom:16px" data-tab="sesion">+ Agregar apartado de sesión</button>
 
@@ -1919,6 +1923,7 @@ function showTab(name){
  if(btns[idx]) btns[idx].classList.add('on');
  if(name==='diario' && typeof renderDiario==='function') renderDiario();
  if(name==='asistencia' && typeof renderAsistencia==='function') renderAsistencia();
+ if(name==='sesion' && typeof renderSesionSelector==='function') renderSesionSelector();
  window.scrollTo(0,0);
 }
 const SUPA_URL = 'https://kpeftmcawokbhxwtnnsw.supabase.co';
@@ -2080,6 +2085,41 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.addEventListener('controllerchange', mostrarBannerActualizacion);
  });
 }
+function renderSesionSelector(opts){
+ opts = opts || {};
+ const bar = el('sesionSelector');
+ if(!bar) return;
+ const cards = sesionCards();
+ if(typeof window._sesionSel!=='number') window._sesionSel = 0;
+ if(opts.selectIdx!==undefined) window._sesionSel = opts.selectIdx;
+ if(opts.resetToFirst) window._sesionSel = 0;
+ if(window._sesionSel >= cards.length) window._sesionSel = Math.max(0, cards.length-1);
+ bar.innerHTML = '';
+ cards.forEach((card,i)=>{
+  const b = document.createElement('button');
+  b.type='button';
+  b.textContent = 'Sesión ' + (i+1);
+  if(i===window._sesionSel) b.classList.add('on');
+  b.onclick = () => { window._sesionSel = i; renderSesionSelector(); };
+  bar.appendChild(b);
+ });
+ cards.forEach((card,i)=>{ card.style.display = (i===window._sesionSel) ? '' : 'none'; });
+}
+(function(){
+ const cont = el('sesionesContainer');
+ if(!cont) return;
+ new MutationObserver(muts=>{
+  let added=0, removed=0;
+  muts.forEach(m=>{ added += m.addedNodes.length; removed += m.removedNodes.length; });
+  if(added===1 && removed===0){
+   renderSesionSelector({selectIdx: sesionCards().length-1});
+  } else if(added>1 && removed===0){
+   renderSesionSelector({resetToFirst:true});
+  } else {
+   renderSesionSelector();
+  }
+ }).observe(cont, {childList:true});
+})();
 showTab('curricular');
 cargarGrupo();
 </script>
