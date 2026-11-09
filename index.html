@@ -15,7 +15,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-@media print{button,#installBtn,.tabbar,#dashboardView{display:none !important}.card{break-inside:avoid;border-color:#999}body{background:#fff;color:#000}[data-tab]{display:block !important}}
+@media print{button,#installBtn,.tabbar,#dashboardView{display:none !important}.card{break-inside:avoid;border-color:#999}body{background:#fff;color:#000}[data-tab]{display:block !important}textarea{display:none !important}.print-mirror{display:block !important;white-space:pre-wrap;word-break:break-word;border:1px solid #999;border-radius:8px;padding:10px 12px;font-family:inherit;font-size:.95rem;color:#000;background:#fff;min-height:1em}}
+.print-mirror{display:none}
 [data-tab]{display:none}
 [data-tab].tab-active{display:block}
 #salidaCard.tab-active{display:none}
@@ -292,11 +293,11 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
   <label for="sApt">Actividad física</label>
   <select id="sApt"><option value="sin">Sin restricción</option><option value="adapt">Con adaptaciones</option><option value="no">No apto temporalmente</option></select>
   <label for="sCond">Condición física y limitaciones</label>
-  <textarea id="sCond" placeholder="Ej. Asma leve: evitar carreras largas en días fríos. Epilepsia controlada. Lesión de tobillo hasta diciembre."></textarea>
+  <textarea id="sCond" placeholder="Ej. Asma leve: evitar carreras largas en días fríos. Epilepsia controlada. Lesión de tobillo hasta diciembre."></textarea><div class="print-mirror" id="sCond_print"></div>
   <label for="sAlerg">Alergias</label>
   <input type="text" id="sAlerg" placeholder="Ej. Picadura de abeja, cacahuate">
   <label for="sTrast">Barreras para el aprendizaje y la participación (BAP)</label>
-  <textarea id="sTrast" placeholder="Ej. TDAH, discapacidad auditiva, dificultad en la coordinación motriz"></textarea>
+  <textarea id="sTrast" placeholder="Ej. TDAH, discapacidad auditiva, dificultad en la coordinación motriz"></textarea><div class="print-mirror" id="sTrast_print"></div>
   <label for="sMed">Medicamentos</label>
   <input type="text" id="sMed" placeholder="Ej. Inhalador de salbutamol en su mochila">
   <div class="fila2">
@@ -374,7 +375,7 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
 <button type="button" onclick="volverTablero()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🏠 Tablero</button>
 <button type="button" onclick="buscarActualizacion()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🔄 Buscar actualización</button>
-<button type="button" onclick="window.print()">🖨️ Imprimir</button>
+<button type="button" onclick="imprimirPlaneacion()">🖨️ Imprimir</button>
 <button type="button" onclick="authSignOut()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🔒 Cerrar sesión</button>
 </div>
 
@@ -465,9 +466,9 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <div class="card" data-tab="sesion">
 <h2>6. Propuesta didáctica (impulso MAID)</h2>
 <label>Tarea / Impulso didáctico</label>
-<textarea id="tarea" placeholder="Describe el impulso didáctico de la sesión..."></textarea>
+<textarea id="tarea" placeholder="Describe el impulso didáctico de la sesión..."></textarea><div class="print-mirror" id="tarea_print"></div>
 <label>Justificación</label>
-<textarea id="justif" placeholder="Se autogenera; puedes editarla"></textarea>
+<textarea id="justif" placeholder="Se autogenera; puedes editarla"></textarea><div class="print-mirror" id="justif_print"></div>
 </div>
 
 <div class="card" data-tab="sesion">
@@ -668,6 +669,14 @@ secundaria:{
  "3°":{m:"Valora capacidades propias y de otros, mostrando mayor autonomía motriz.",e:"Diseña y participa en actividades de iniciación deportiva y deporte educativo.",s:"Diseña alternativas contra el sedentarismo, a partir del análisis de riesgos.",l:"Emplea pensamiento estratégico para favorecer colaboración y creatividad.",i:"Promueve relaciones asertivas, fomentando el juego limpio y la confrontación lúdica."}}
 };
 function el(id){return document.getElementById(id)}
+function imprimirPlaneacion(){
+ ["sCond","sTrast","tarea","justif"].forEach(id=>{
+  const ta = document.getElementById(id);
+  const mirror = document.getElementById(id+"_print");
+  if(ta && mirror) mirror.textContent = ta.value;
+ });
+ window.print();
+}
 function temaActual(){
  try{ const g = localStorage.getItem('maid_tema'); if(g==='dark'||g==='light') return g; }catch(e){}
  return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
