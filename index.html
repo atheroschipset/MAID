@@ -670,10 +670,14 @@ secundaria:{
 };
 function el(id){return document.getElementById(id)}
 function imprimirPlaneacion(){
- ["sCond","sTrast","tarea","justif"].forEach(id=>{
-  const ta = document.getElementById(id);
-  const mirror = document.getElementById(id+"_print");
-  if(ta && mirror) mirror.textContent = ta.value;
+ document.querySelectorAll("textarea").forEach(ta=>{
+  let mirror = ta.nextElementSibling;
+  if(!mirror || !mirror.classList || !mirror.classList.contains("print-mirror")){
+   mirror = document.createElement("div");
+   mirror.className = "print-mirror";
+   ta.insertAdjacentElement("afterend", mirror);
+  }
+  mirror.textContent = ta.value;
  });
  window.print();
 }
