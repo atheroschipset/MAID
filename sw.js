@@ -1,4 +1,4 @@
-const CACHE = 'maid-nem-v11';
+const CACHE = 'maid-nem-v12';
 self.addEventListener('install', e => { self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil(
@@ -8,7 +8,7 @@ self.addEventListener('activate', e => {
 });
 self.addEventListener('fetch', e => {
   e.respondWith(
-    fetch(e.request).then(res => {
+    fetch(e.request, {cache:'no-store'}).then(res => {
       const resClone = res.clone();
       caches.open(CACHE).then(c => c.put(e.request, resClone)).catch(()=>{});
       return res;
