@@ -507,6 +507,13 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <div class="card" data-tab="alumnos">
 <h2>9. Rúbrica de evaluación — Lente MAID</h2>
 <div class="info">Escala 1 a 3. Toma los nombres directo de la Lista de alumnos. Se guarda sola en este dispositivo.</div>
+<div class="asisTop" style="margin:10px 0">
+ <div><label for="rubricaFecha">Fecha de esta evaluación</label><input type="date" id="rubricaFecha"></div>
+ <div class="asisAcciones">
+  <button type="button" onclick="rubricaCopiarAnterior()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">Copiar la calificación anterior</button>
+  <button type="button" onclick="rubricaBorrarDia()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">Borrar este día</button>
+ </div>
+</div>
 <div style="margin:10px 0">
  <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:6px">Criterios que evalúas en esta rúbrica</label>
  <div id="criteriosChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
@@ -520,6 +527,8 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <div class="card" data-tab="alumnos">
 <h2>Resultados de la rúbrica (grupal)</h2>
 <div class="info" id="rubricaResumen"></div>
+<div style="max-width:640px;margin-top:16px"><canvas id="chartRubricaHistorial"></canvas></div>
+<div style="overflow-x:auto;margin-top:10px"><table id="rubricaHistorialTabla" style="width:100%;border-collapse:collapse;font-size:.85rem"></table></div>
 <div style="max-width:500px;margin-top:12px"><canvas id="chartCriterios"></canvas></div>
 <div style="max-width:500px;margin-top:20px"><canvas id="chartDistribucion"></canvas></div>
 <button type="button" onclick="renderRubrica()" style="margin-top:8px">↻ Recalcular</button>
@@ -1106,7 +1115,7 @@ async function borrarSalud(){
 el('sAut').addEventListener('change', saludHabilitar);
 el('saludModal').addEventListener('click', e=>{ if(e.target.id==='saludModal') cerrarSalud(); });
 el('saludModal').addEventListener('keydown', e=>{ if(e.key==='Escape') cerrarSalud(); });
-function syncRubricaLen(){ if(typeof rubrica!=='undefined'){ rubrica.length=alumnos.length; if(typeof renderRubrica==='function') renderRubrica(); } if(typeof imc!=='undefined'){ imc.length=alumnos.length; if(typeof renderImc==='function') renderImc(); } }
+function syncRubricaLen(){ if(typeof rubricaPorFecha!=='undefined'){ Object.keys(rubricaPorFecha).forEach(d=>{ if(Array.isArray(rubricaPorFecha[d])) rubricaPorFecha[d].length=alumnos.length; }); } if(typeof rubrica!=='undefined'){ rubrica.length=alumnos.length; if(typeof renderRubrica==='function') renderRubrica(); } if(typeof imc!=='undefined'){ imc.length=alumnos.length; if(typeof renderImc==='function') renderImc(); } }
 function addAlumno(){ alumnos.push(blankAlumno()); saveAlumnos(); renderAlumnos(); syncRubricaLen(); }
 function removeAlumno(i){ if(typeof asistenciaQuitarAlumno==='function') asistenciaQuitarAlumno(i); alumnos.splice(i,1); saveAlumnos(); renderAlumnos(); syncRubricaLen(); }
 function generarAlumnos(){
@@ -1131,16 +1140,64 @@ const CRITERIOS_DEFECTO = [
  {id:'as', label:'Aprend. signif.'},
  {id:'mp', label:'Motiv. percibida'}
 ];
+function rubricaUltimaDe(valorGuardado){
+ if(Array.isArray(valorGuardado)) return valorGuardado;
+ if(valorGuardado && typeof valorGuardado==='object'){
+  const fechas = Object.keys(valorGuardado).filter(d=>Array.isArray(valorGuardado[d])).sort();
+  return fechas.length ? valorGuardado[fechas[fechas.length-1]] : [];
+ }
+ return [];
+}
 let rubrica = [];
+let rubricaPorFecha = {};
 let criterios = [];
+function rubricaDia(){ return el('rubricaFecha') ? el('rubricaFecha').value : ''; }
 async function loadRubrica(){
- rubrica = (await dbGet('rubrica_'+groupKey())) || [];
+ const raw = await dbGet('rubrica_'+groupKey());
+ if(Array.isArray(raw)){
+  // Formato anterior (una sola calificación sin fecha): se conserva bajo la fecha de hoy.
+  rubricaPorFecha = { [new Date().toLocaleDateString('en-CA')]: raw };
+ } else {
+  rubricaPorFecha = raw || {};
+ }
  criterios = (await dbGet('criterios_'+groupKey())) || CRITERIOS_DEFECTO.map(c=>({...c}));
+ const f = el('rubricaFecha');
+ if(f && !f.value) f.value = new Date().toLocaleDateString('en-CA');
+ rubrica = rubricaPorFecha[rubricaDia()] || [];
  renderCriteriosChips();
  renderRubrica();
+ renderRubricaHistorial();
 }
-async function saveRubricaNow(){ await dbSet('rubrica_'+groupKey(), rubrica); }
+async function saveRubricaNow(){
+ const d = rubricaDia(); if(!d) return;
+ rubricaPorFecha[d] = rubrica;
+ await dbSet('rubrica_'+groupKey(), rubricaPorFecha);
+}
 const saveRubrica = debounce(saveRubricaNow, 700);
+function cambiarFechaRubrica(){
+ rubrica = rubricaPorFecha[rubricaDia()] || [];
+ renderRubrica();
+ renderRubricaHistorial();
+}
+function rubricaBorrarDia(){
+ const d = rubricaDia(); if(!d || !rubricaPorFecha[d]) return;
+ if(!confirm('¿Borrar la calificación del '+d+'?')) return;
+ delete rubricaPorFecha[d];
+ rubrica = [];
+ dbSet('rubrica_'+groupKey(), rubricaPorFecha);
+ renderRubrica();
+ renderRubricaHistorial();
+}
+function rubricaCopiarAnterior(){
+ const d = rubricaDia(); if(!d) return;
+ const fechas = Object.keys(rubricaPorFecha).filter(x=>x<d && Array.isArray(rubricaPorFecha[x])).sort();
+ const anterior = fechas.length ? fechas[fechas.length-1] : null;
+ if(!anterior){ alert('No hay una evaluación anterior guardada para copiar.'); return; }
+ if(rubrica.some(r=>r && Object.keys(r).length) && !confirm('Esto reemplaza lo que ya capturaste en el día actual con la calificación del '+anterior+'. ¿Continuar?')) return;
+ rubrica = JSON.parse(JSON.stringify(rubricaPorFecha[anterior]||[]));
+ saveRubrica();
+ renderRubrica();
+}
 async function saveCriteriosNow(){ await dbSet('criterios_'+groupKey(), criterios); }
 const saveCriterios = debounce(saveCriteriosNow, 700);
 
@@ -1161,13 +1218,14 @@ function agregarCriterio(){
  renderRubrica();
 }
 function quitarCriterio(id){
- if(!confirm('¿Quitar este criterio de la rúbrica? Las calificaciones ya capturadas en esta columna se perderán.')) return;
+ if(!confirm('¿Quitar este criterio de la rúbrica? Las calificaciones ya capturadas en esta columna se perderán en todas las fechas.')) return;
  criterios = criterios.filter(c=>c.id!==id);
- rubrica.forEach(r=>{ if(r) delete r[id]; });
+ Object.keys(rubricaPorFecha).forEach(d=>{ (rubricaPorFecha[d]||[]).forEach(r=>{ if(r) delete r[id]; }); });
  saveCriterios();
  saveRubrica();
  renderCriteriosChips();
  renderRubrica();
+ renderRubricaHistorial();
 }
 function setRub(i, campo, val){
  if(!rubrica[i]) rubrica[i]={};
@@ -1246,6 +1304,32 @@ Distribución: ${dist}`;
  const distOpts = { animation:false, resizeDelay:200, scales:{ y:{ beginAtZero:true, ticks:{color:fgColor, stepSize:1}, grid:{color:gridColor} }, x:{ ticks:{color:fgColor}, grid:{display:false} } }, plugins:{ legend:{display:false}, title:{display:true, text:'Distribución de alumnos por nivel (grupal)', color:fgColor} } };
  if(chartDist){ chartDist.data=distData; chartDist.options=distOpts; chartDist.update(); }
  else { chartDist = new Chart(el('chartDistribucion').getContext('2d'), { type:'bar', data:distData, options:distOpts }); }
+ if(typeof renderRubricaHistorial==='function') renderRubricaHistorial();
+}
+function rubricaHistorialStats(){
+ const fechas = Object.keys(rubricaPorFecha).filter(d=>Array.isArray(rubricaPorFecha[d])).sort();
+ return fechas.map(d=>{
+  const arr = rubricaPorFecha[d];
+  const vals = alumnos.map((_,i)=>calcAlumno(arr[i])).filter(c=>c.prom!==null).map(c=>c.prom);
+  const prom = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  return { d, prom, n: vals.length };
+ }).filter(x=>x.n>0);
+}
+let chartRubHist = null;
+function renderRubricaHistorial(){
+ const tabla = el('rubricaHistorialTabla');
+ if(!tabla) return;
+ const st = rubricaHistorialStats();
+ if(st.length===0){ tabla.innerHTML=''; if(chartRubHist){chartRubHist.destroy();chartRubHist=null;} return; }
+ tabla.innerHTML = '<tr><th style="text-align:left;padding:4px">Fecha</th><th>Alumnos evaluados</th><th>Promedio</th><th>Nivel</th></tr>' +
+  st.map(x=>`<tr><td style="padding:4px">${fechaCorta(x.d)}</td><td style="text-align:center">${x.n}</td><td style="text-align:center">${x.prom.toFixed(2)}</td><td style="text-align:center">${nivelDe(x.prom)}</td></tr>`).join('');
+ if(typeof Chart==='undefined') return;
+ const css = getComputedStyle(document.documentElement);
+ const fg = css.getPropertyValue('--fg'), grid = css.getPropertyValue('--line'), accent = css.getPropertyValue('--accent');
+ const data = { labels: st.map(x=>fechaCorta(x.d)), datasets:[{ label:'Promedio del grupo', data: st.map(x=>x.prom), borderColor: accent, backgroundColor: accent, tension:.25, pointRadius:4, fill:false }] };
+ const opts = { animation:false, scales:{ y:{ min:0, max:3, ticks:{color:fg}, grid:{color:grid} }, x:{ ticks:{color:fg}, grid:{display:false} } }, plugins:{ legend:{display:false}, title:{display:true, text:'Promedio del grupo por día evaluado', color:fg} } };
+ if(chartRubHist){ chartRubHist.data=data; chartRubHist.options=opts; chartRubHist.update(); }
+ else { chartRubHist = new Chart(el('chartRubricaHistorial').getContext('2d'), { type:'line', data, options:opts }); }
 }
 
 // IOTF (Cole & Lobstein 2012) BMI cutoffs by age (years) and sex: [edad, H18.5,H25,H30,H35, M18.5,M25,M30,M35]
@@ -1451,7 +1535,12 @@ function descargarExcel(){
   return base;
  });
  const wsRub = XLSX.utils.json_to_sheet(rubRows);
- XLSX.utils.book_append_sheet(wb, wsRub, 'Rubrica');
+ XLSX.utils.book_append_sheet(wb, wsRub, ('Rubrica '+(rubricaDia()||'')).trim().slice(0,31));
+ const progresoRows = rubricaHistorialStats().map(x=>({ 'Fecha': x.d, 'Alumnos evaluados': x.n, 'Promedio del grupo': +x.prom.toFixed(2), 'Nivel': nivelDe(x.prom) }));
+ if(progresoRows.length){
+  const wsProg = XLSX.utils.json_to_sheet(progresoRows);
+  XLSX.utils.book_append_sheet(wb, wsProg, 'Progreso');
+ }
  const imcRows = alumnos.map((a,i)=>{
   const r = imc[i]||{};
   const imcA = calcIMCval(r.peA,r.taA), imcD = calcIMCval(r.peD,r.taD);
@@ -1625,6 +1714,7 @@ function renderAsistencia(){
  actualizarIndicadores();
 }
 el('asisFecha').addEventListener('change', renderAsistencia);
+el('rubricaFecha').addEventListener('change', cambiarFechaRubrica);
 function setBadge(id, text, state){
  const b = document.getElementById(id);
  if(!b) return;
@@ -1817,7 +1907,7 @@ async function loadDashboard(){
   const parts = k.split('_');
   const n = parts[0], g = parts[1], grp = parts.slice(2).join('_');
   const alumnosArr = groups[k].alumnos || [];
-  const rubricaArr = groups[k].rubrica || [];
+  const rubricaArr = rubricaUltimaDe(groups[k].rubrica);
   const criteriosArr = groups[k].criterios || CRITERIOS_DEFECTO;
   const totalAlum = alumnosArr.length;
   const nAlum = alumnosArr.filter(a=> a && (typeof a==='string'? a.trim()!=='' : (a.nombre||'').trim()!=='')).length;
@@ -1835,7 +1925,7 @@ async function loadDashboard(){
    <button type="button" onclick="event.stopPropagation();dashboardEliminarGrupo('${kEsc}')" title="Eliminar grupo" style="position:absolute;top:10px;right:10px;background:none;border:1px solid var(--line);color:#c23b3b;width:28px;height:28px;padding:0;border-radius:6px;font-size:.9rem;line-height:1">🗑</button>
    <h2 style="padding-right:30px">${nivelLabel} · ${g} — ${grp==='general'?'(sin grupo)':grp}</h2>
    <div class="info">👥 ${nAlum}${totalAlum?'/'+totalAlum:''} alumno(s) con nombre<br>
-   📋 Rúbrica: ${nRub}${totalAlum?'/'+totalAlum:''} capturada(s)${promGrupal!==null?` — promedio ${promGrupal.toFixed(2)} (${nivelDe(promGrupal)})`:''}${horario?`<br>🕐 ${horario}`:''}</div>
+   📋 Rúbrica (última evaluación): ${nRub}${totalAlum?'/'+totalAlum:''} capturada(s)${promGrupal!==null?` — promedio ${promGrupal.toFixed(2)} (${nivelDe(promGrupal)})`:''}${horario?`<br>🕐 ${horario}`:''}</div>
   </div>`;
  }).join('');
  if(typeof renderComparativa==='function') renderComparativa();
@@ -1848,7 +1938,7 @@ function renderComparativa(){
   const parts = k.split('_');
   const n = parts[0], g = parts[1], grp = parts.slice(2).join('_');
   const alumnosArr = lastDashboardGroups[k].alumnos || [];
-  const rubricaArr = lastDashboardGroups[k].rubrica || [];
+  const rubricaArr = rubricaUltimaDe(lastDashboardGroups[k].rubrica);
   const criteriosArr = lastDashboardGroups[k].criterios || CRITERIOS_DEFECTO;
   const proms = alumnosArr.map((_,i)=>{
    const r = rubricaArr[i];
