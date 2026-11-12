@@ -16,7 +16,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 @media print{button,#installBtn,.tabbar,#dashboardView{display:none !important}.card{break-inside:avoid;border-color:#999}body{background:#fff;color:#000}[data-tab]{display:block !important}textarea{display:none !important}.print-mirror{display:block !important;white-space:pre-wrap;word-break:break-word;border:1px solid #999;border-radius:8px;padding:10px 12px;font-family:inherit;font-size:.95rem;color:#000;background:#fff;min-height:1em}}
-@media print{body.printSoloAsistencia [data-tab]:not([data-tab="asistencia"]){display:none !important}body.printSoloAsistencia #asisPorcentajeCard{display:block !important}}
+@media print{body.printSoloAsistencia [data-tab]:not([data-tab="asistencia"]){display:none !important}body.printSoloAsistencia #asisPorcentajeCard,body.printSoloAsistencia #asisHistorialCard{display:block !important}body.printSoloAsistencia #asisHistorialTabla{font-size:.65rem}}
 .print-mirror{display:none}
 [data-tab]{display:none}
 [data-tab].tab-active{display:block}
@@ -618,6 +618,11 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <div class="info">El porcentaje cuenta asistencias y retardos como presentes. Las faltas justificadas no cuentan en contra. Se marca en naranja a quien va por debajo del 80&nbsp;%.</div>
 <div style="overflow-x:auto"><table class="asisTabla" id="asisTabla"></table></div>
 </div>
+<div class="card noPrint" data-tab="asistencia" id="asisHistorialCard">
+<h2>Historial de asistencia por fecha</h2>
+<div class="info">A = asistió, R = retardo, F = falta, J = justificada. Los alumnos dados de baja (cambio de grupo) quedan marcados aquí pero ya no aparecen en el pase de lista.</div>
+<div style="overflow-x:auto"><table class="asisTabla" id="asisHistorialTabla"></table></div>
+</div>
 
 <div id="updateBanner" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--accent);color:var(--bg);padding:10px max(16px,env(safe-area-inset-left,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right,0px));align-items:center;justify-content:space-between;gap:10px;font-family:inherit;flex-wrap:wrap">
  <span>🔄 Hay una nueva versión de Impulso EF disponible.</span>
@@ -1054,6 +1059,27 @@ el('sesionesContainer').addEventListener('input', ()=>{ if(typeof actualizarIndi
 
 let alumnos = [];
 function blankAlumno(){ return {nombre:'', edad:null, sexo:''}; }
+function botonEstado(a,i){
+ if(a && a.inactivo){
+  return `<button type="button" class="btnSalud alerta" onclick="reactivarAlumno(${i})" title="${escH(a.notaInactivo||'Dado de baja')}">⛔ De baja</button>`;
+ }
+ return `<button type="button" class="btnSalud" onclick="darDeBajaAlumno(${i})">🚫 Dar de baja</button>`;
+}
+function darDeBajaAlumno(i){
+ const a = alumnos[i]; if(!a) return;
+ const nota = prompt('Nota (por ejemplo: "Se cambió al grupo 2°B"). Este alumno dejará de aparecer en el pase de lista, pero su historial se conserva.', a.notaInactivo||'');
+ if(nota===null) return;
+ a.inactivo = true; a.notaInactivo = nota.trim();
+ saveAlumnos(); renderAlumnos();
+ if(typeof renderAsistencia==='function' && document.querySelector('[data-tab="asistencia"].tab-active')) renderAsistencia();
+}
+function reactivarAlumno(i){
+ const a = alumnos[i]; if(!a) return;
+ if(!confirm('¿Reactivar a este alumno para que vuelva a aparecer en el pase de lista?')) return;
+ a.inactivo = false;
+ saveAlumnos(); renderAlumnos();
+ if(typeof renderAsistencia==='function' && document.querySelector('[data-tab="asistencia"].tab-active')) renderAsistencia();
+}
 async function loadAlumnos(){
  const arr = (await dbGet('alumnos_'+groupKey())) || [];
  alumnos = arr.map(a => typeof a==='string' ? {nombre:a, edad:null, sexo:''} : a);
@@ -1064,18 +1090,19 @@ async function saveAlumnosNow(){ await dbSet('alumnos_'+groupKey(), alumnos); }
 const saveAlumnos = debounce(saveAlumnosNow, 700);
 function renderAlumnos(){
  const t = el('alumnosTabla');
- t.innerHTML = '<tr><th style="text-align:left;padding:4px">N°</th><th style="text-align:left;padding:4px">Nombre del alumno</th><th>Edad</th><th>Sexo</th><th class="colSalud">Salud</th><th></th></tr>' +
-  alumnos.map((a,i)=>`<tr>
+ t.innerHTML = '<tr><th style="text-align:left;padding:4px">N°</th><th style="text-align:left;padding:4px">Nombre del alumno</th><th>Edad</th><th>Sexo</th><th class="colSalud">Salud</th><th>Estado</th><th></th></tr>' +
+  alumnos.map((a,i)=>`<tr${a.inactivo?' style="opacity:.55"':''}>
    <td style="padding:4px">${i+1}</td>
-   <td style="padding:4px"><input type="text" value="${(a.nombre||'').replace(/"/g,'&quot;')}" oninput="alumnos[${i}].nombre=this.value;saveAlumnos();const rr=document.getElementById('rrow${i}');if(rr)rr.children[1].textContent=this.value||'(sin nombre)';const ir=document.getElementById('irow${i}');if(ir)ir.children[1].textContent=this.value||'(sin nombre)';" style="width:100%"></td>
-   <td style="padding:4px"><input type="number" min="2" max="25" value="${a.edad??''}" style="width:55px" oninput="alumnos[${i}].edad=this.value?parseFloat(this.value):null;saveAlumnos();"></td>
-   <td style="padding:4px"><select style="width:65px" onchange="alumnos[${i}].sexo=this.value;saveAlumnos();">
+   <td style="padding:4px"><input type="text" value="${(a.nombre||'').replace(/"/g,'&quot;')}" ${a.inactivo?'disabled':''} oninput="alumnos[${i}].nombre=this.value;saveAlumnos();const rr=document.getElementById('rrow${i}');if(rr)rr.children[1].textContent=this.value||'(sin nombre)';const ir=document.getElementById('irow${i}');if(ir)ir.children[1].textContent=this.value||'(sin nombre)';" style="width:100%"></td>
+   <td style="padding:4px"><input type="number" min="2" max="25" value="${a.edad??''}" style="width:55px" ${a.inactivo?'disabled':''} oninput="alumnos[${i}].edad=this.value?parseFloat(this.value):null;saveAlumnos();"></td>
+   <td style="padding:4px"><select style="width:65px" ${a.inactivo?'disabled':''} onchange="alumnos[${i}].sexo=this.value;saveAlumnos();">
      <option value="" ${a.sexo===''?'selected':''}>-</option>
      <option value="H" ${a.sexo==='H'?'selected':''}>H</option>
      <option value="M" ${a.sexo==='M'?'selected':''}>M</option>
    </select></td>
    <td style="padding:4px" class="colSalud">${botonSalud(a,i)}</td>
-   <td style="padding:4px"><button type="button" onclick="removeAlumno(${i})" style="background:transparent;color:var(--accent);border:1px solid var(--line);padding:2px 8px">×</button></td>
+   <td style="padding:4px">${botonEstado(a,i)}</td>
+   <td style="padding:4px"><button type="button" ${a.inactivo?'disabled':''} onclick="removeAlumno(${i})" style="background:transparent;color:var(--accent);border:1px solid var(--line);padding:2px 8px">×</button></td>
   </tr>`).join('');
  if(typeof actualizarIndicadores==='function') actualizarIndicadores();
  renderSaludResumen();
@@ -1684,7 +1711,7 @@ function asisMarcar(i, code){
 }
 function asistenciaTodos(code){
  const d = asisDia(); if(!d){ alert('Elige la fecha de la clase.'); return; }
- asistencia[d] = alumnos.map(()=>code);
+ asistencia[d] = alumnos.map(a=>(a&&a.inactivo)?null:code);
  saveAsistencia(); renderAsistencia();
 }
 function asistenciaBorrarDia(){
@@ -1720,7 +1747,10 @@ function renderAsistencia(){
  const dia = (d && asistencia[d]) || [];
  const marcados = dia.filter(Boolean).length;
  el('asisDiaInfo').textContent = !d ? 'Elige la fecha de la clase.' : (marcados ? `${marcados} de ${alumnos.length} alumnos marcados este día. Toca de nuevo una letra para quitarla.` : 'Aún no pasas lista este día. Usa "Todos asistieron" y luego marca solo las faltas y retardos.');
- el('asisLista').innerHTML = alumnos.map((a,i)=>`<div class="asisFila"><span class="num">${i+1}</span><span class="nom">${escH((a&&a.nombre)||'(sin nombre)')}</span><span class="asisBtns" role="group" aria-label="Asistencia de ${escH((a&&a.nombre)||'alumno '+(i+1))}">${ASIS_CODES.map(k=>`<button type="button" class="asisBtn ${dia[i]===k?'on '+k:''}" aria-pressed="${dia[i]===k}" title="${{A:'Asistió',R:'Retardo',F:'Falta',J:'Justificada'}[k]}" onclick="asisMarcar(${i},'${k}')">${k}</button>`).join('')}</span></div>`).join('') || '<div class="info">Primero agrega alumnos en la pestaña 5.</div>';
+ el('asisLista').innerHTML = alumnos.map((a,i)=>{
+   if(a && a.inactivo) return '';
+   return `<div class="asisFila"><span class="num">${i+1}</span><span class="nom">${escH((a&&a.nombre)||'(sin nombre)')}</span><span class="asisBtns" role="group" aria-label="Asistencia de ${escH((a&&a.nombre)||'alumno '+(i+1))}">${ASIS_CODES.map(k=>`<button type="button" class="asisBtn ${dia[i]===k?'on '+k:''}" aria-pressed="${dia[i]===k}" title="${{A:'Asistió',R:'Retardo',F:'Falta',J:'Justificada'}[k]}" onclick="asisMarcar(${i},'${k}')">${k}</button>`).join('')}</span></div>`;
+  }).join('') || '<div class="info">Primero agrega alumnos en la pestaña 5.</div>';
  const st = asisStats();
  const enRiesgo = st.porAlumno.filter(x=>x.pct!==null && x.pct<80).length;
  el('asisKpis').innerHTML = `
@@ -1731,8 +1761,10 @@ function renderAsistencia(){
  el('asisTabla').innerHTML = '<tr><th>N°</th><th>Alumno</th><th>A</th><th>R</th><th>F</th><th>J</th><th>Asistencia</th></tr>' +
   st.porAlumno.map((x,i)=>{
    const bajo = x.pct!==null && x.pct<80;
-   return `<tr><td>${i+1}</td><td>${escH((alumnos[i]&&alumnos[i].nombre)||'(sin nombre)')}</td><td>${x.c.A}</td><td>${x.c.R}</td><td>${x.c.F}</td><td>${x.c.J}</td><td class="${bajo?'bajo':''}">${x.pct===null?'—':`<span class="asisBarra"><i style="width:${x.pct}%"></i></span>${x.pct} %`}</td></tr>`;
+   const tag = (alumnos[i]&&alumnos[i].inactivo) ? ' <span style="opacity:.65;font-size:.75em">(de baja)</span>' : '';
+   return `<tr><td>${i+1}</td><td>${escH((alumnos[i]&&alumnos[i].nombre)||'(sin nombre)')}${tag}</td><td>${x.c.A}</td><td>${x.c.R}</td><td>${x.c.F}</td><td>${x.c.J}</td><td class="${bajo?'bajo':''}">${x.pct===null?'—':`<span class="asisBarra"><i style="width:${x.pct}%"></i></span>${x.pct} %`}</td></tr>`;
   }).join('');
+ renderAsistenciaHistorial();
  if(typeof Chart==='undefined') return;
  const css = getComputedStyle(document.documentElement);
  const fg = css.getPropertyValue('--fg'), grid = css.getPropertyValue('--line'), verde = css.getPropertyValue('--verde');
@@ -1741,6 +1773,21 @@ function renderAsistencia(){
  if(chartAsis){ chartAsis.data=data; chartAsis.options=opts; chartAsis.update(); }
  else { chartAsis = new Chart(el('chartAsistencia').getContext('2d'), { type:'line', data, options:opts }); }
  actualizarIndicadores();
+}
+function renderAsistenciaHistorial(){
+ const cont = el('asisHistorialTabla'); if(!cont) return;
+ const fechas = Object.keys(asistencia).filter(d=>Array.isArray(asistencia[d])).sort();
+ if(fechas.length===0){ cont.innerHTML = '<tr><td style="padding:8px" class="info">Aún no hay clases con lista registrada.</td></tr>'; return; }
+ const head = '<tr><th>N°</th><th>Alumno</th>' + fechas.map(d=>`<th>${fechaCorta(d)}</th>`).join('') + '</tr>';
+ const rows = alumnos.map((a,i)=>{
+  const tag = (a&&a.inactivo) ? ' <span style="opacity:.65;font-size:.75em">(de baja)</span>' : '';
+  const celdas = fechas.map(d=>{
+   const v = (asistencia[d]||[])[i];
+   return v ? `<td><span class="asisChip ${v}">${v}</span></td>` : '<td>—</td>';
+  }).join('');
+  return `<tr><td>${i+1}</td><td>${escH((a&&a.nombre)||'(sin nombre)')}${tag}</td>${celdas}</tr>`;
+ }).join('');
+ cont.innerHTML = head + rows;
 }
 el('asisFecha').addEventListener('change', renderAsistencia);
 el('rubricaFecha').addEventListener('change', cambiarFechaRubrica);
