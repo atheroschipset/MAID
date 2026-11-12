@@ -16,6 +16,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 @media print{button,#installBtn,.tabbar,#dashboardView{display:none !important}.card{break-inside:avoid;border-color:#999}body{background:#fff;color:#000}[data-tab]{display:block !important}textarea{display:none !important}.print-mirror{display:block !important;white-space:pre-wrap;word-break:break-word;border:1px solid #999;border-radius:8px;padding:10px 12px;font-family:inherit;font-size:.95rem;color:#000;background:#fff;min-height:1em}}
+@media print{body.printSoloAsistencia [data-tab]:not([data-tab="asistencia"]){display:none !important}body.printSoloAsistencia #asisPorcentajeCard{display:block !important}}
 .print-mirror{display:none}
 [data-tab]{display:none}
 [data-tab].tab-active{display:block}
@@ -608,10 +609,11 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 </div>
 <div class="card" data-tab="asistencia">
 <h2>Asistencia del grupo</h2>
+<button type="button" onclick="imprimirAsistenciaCompleta()" style="margin-bottom:10px">📄 Imprimir / PDF (lista, estadísticas y porcentajes)</button>
 <div class="asisKpis" id="asisKpis"></div>
 <div style="max-width:640px;margin-top:12px"><canvas id="chartAsistencia"></canvas></div>
 </div>
-<div class="card noPrint" data-tab="asistencia">
+<div class="card noPrint" data-tab="asistencia" id="asisPorcentajeCard">
 <h2>Porcentaje por alumno</h2>
 <div class="info">El porcentaje cuenta asistencias y retardos como presentes. Las faltas justificadas no cuentan en contra. Se marca en naranja a quien va por debajo del 80&nbsp;%.</div>
 <div style="overflow-x:auto"><table class="asisTabla" id="asisTabla"></table></div>
@@ -713,6 +715,12 @@ function imprimirPlaneacion(){
   }
   mirror.textContent = ta.value;
  });
+ window.print();
+}
+function imprimirAsistenciaCompleta(){
+ document.body.classList.add('printSoloAsistencia');
+ const limpiar = ()=>{ document.body.classList.remove('printSoloAsistencia'); window.removeEventListener('afterprint', limpiar); };
+ window.addEventListener('afterprint', limpiar);
  window.print();
 }
 function temaActual(){
