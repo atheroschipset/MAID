@@ -172,6 +172,12 @@ h1,h2,h3,.card h2,button,.tabbtn{font-family:"Barlow Condensed",Barlow,system-ui
 .btnSalud.alerta{background:#e8892b;border-color:#e8892b;color:#1d1405}
 #saludModal{display:none;position:fixed;inset:0;z-index:210;background:rgba(0,0,0,.6);align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow-y:auto}
 #saludModal .card{max-width:560px;width:100%;margin:auto 0}
+#horarioModal{display:none;position:fixed;inset:0;z-index:210;background:rgba(0,0,0,.6);align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow-y:auto}
+#horarioModal .card{max-width:640px;width:100%;margin:auto 0}
+.horarioFila{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px}
+.horarioFila>div{min-width:120px}
+.claseHoyBtn{background:var(--bg);color:var(--fg);border:1px solid var(--line);font-weight:600}
+.claseHoyBtn.enCurso{background:var(--accent);color:var(--bg);border-color:var(--accent)}
 #saludModal .fila2{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0 12px}
 .avisoSalud{font-size:.88rem;line-height:1.45;background:color-mix(in srgb,var(--verde) 12%,transparent);border-left:4px solid var(--verde);padding:10px 12px;border-radius:8px;margin:4px 0 6px}
 .autorizacion{display:flex !important;gap:10px;align-items:flex-start;font-weight:600;margin-top:12px !important;cursor:pointer}
@@ -318,6 +324,19 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
   </div>
  </div>
 </div>
+<div id="horarioModal" role="dialog" aria-modal="true" aria-labelledby="horarioTitulo">
+ <div class="card">
+  <h2 id="horarioTitulo">🗓️ Mi horario semanal</h2>
+  <div class="info">Define qué grupo te toca cada día y hora. Cada vez que entres, Impulso EF detecta la clase del día y te deja la sesión de hoy lista para llenar — se repite cada semana sin que tengas que volver a configurarlo, y lo de semanas anteriores se queda guardado.</div>
+  <div id="horarioFilas"></div>
+  <button type="button" onclick="horarioAgregarFila()" style="margin-top:4px;background:transparent;color:var(--accent);border:1px solid var(--line)">+ Agregar clase</button>
+  <div class="info" id="horarioMsg" style="display:none"></div>
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+   <button type="button" onclick="guardarHorarioSemanal()">Guardar horario</button>
+   <button type="button" onclick="cerrarHorarioModal()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">Cerrar</button>
+  </div>
+ </div>
+</div>
 <div id="escuelasView" style="display:none">
 <div class="wrap">
 <header class="hero"><div class="heroTop"><div class="heroBrand"><img src="icon-192.png" alt=""><span>Impulso EF</span></div><button type="button" class="btnConfig" onclick="abrirConfig(this)" aria-label="Configuración" aria-haspopup="dialog"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div><div><h1>Mis escuelas</h1>
@@ -354,8 +373,10 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
 <button type="button" onclick="volverEscuelas()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">← Escuelas</button>
 <button type="button" onclick="dashboardNuevoGrupo()">+ Nuevo grupo</button>
+<button type="button" onclick="abrirHorarioModal()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🗓️ Mi horario</button>
 <button type="button" onclick="authSignOut()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🔒 Cerrar sesión</button>
 </div>
+<div id="hoyTocaPanel" style="margin-bottom:16px"></div>
 <div id="dashboardGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px"></div>
 <div class="card" style="margin-top:16px">
 <h2>Comparativa entre grupos</h2>
@@ -1897,12 +1918,15 @@ async function loadDashboard(){
  if(metaReparado){ try{ await dbSet('grupos_meta', gruposMetaCache); }catch(e){} }
  lastDashboardGroups = groups;
  const keys = Object.keys(groups).filter(k=>k.split('_').length>=3 && gruposMetaCache[k] && gruposMetaCache[k].escuela_id===currentEscuelaId);
+ keys.sort();
+ lastDashboardKeys = keys;
+ await loadHorarioSemanal();
+ renderHoyToca();
  if(keys.length===0){
   grid.innerHTML = '<div class="info">Aún no tienes grupos en esta escuela. Usa "+ Nuevo grupo" para comenzar.</div>';
   if(typeof renderComparativa==='function') renderComparativa();
   return;
  }
- keys.sort();
  grid.innerHTML = keys.map(k=>{
   const parts = k.split('_');
   const n = parts[0], g = parts[1], grp = parts.slice(2).join('_');
@@ -1997,6 +2021,112 @@ function dashboardNuevoGrupo(){
  currentGroupKey = null;
  cargarGrupo();
  showTab('curricular');
+ window.scrollTo(0,0);
+}
+const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+let horarioSemanal = [];
+let lastDashboardKeys = [];
+function horarioClaveEscuela(){ return 'horarioSemanal_'+(currentEscuelaId||'general'); }
+function etiquetaGrupo(key){
+ const parts = key.split('_'); const n = parts[0], g = parts[1], grp = parts.slice(2).join('_');
+ const nivelLabel = n==='preescolar'?'Preescolar':n==='primaria'?'Primaria':n==='secundaria'?'Secundaria':n;
+ return `${nivelLabel} · ${g}${grp && grp!=='general' ? (' — '+grp) : ''}`;
+}
+async function loadHorarioSemanal(){
+ horarioSemanal = (await dbGet(horarioClaveEscuela())) || [];
+}
+function abrirHorarioModal(){
+ renderHorarioFilas();
+ el('horarioMsg').style.display='none';
+ el('horarioModal').style.display='flex';
+}
+function cerrarHorarioModal(){ el('horarioModal').style.display='none'; }
+function horarioAgregarFila(){
+ if(lastDashboardKeys.length===0){ alert('Primero crea al menos un grupo; luego podrás asignarlo aquí.'); return; }
+ horarioSemanal.push({ dia:1, hora:'08:00', grupo:lastDashboardKeys[0] });
+ renderHorarioFilas();
+}
+function horarioQuitarFila(i){ horarioSemanal.splice(i,1); renderHorarioFilas(); }
+function horarioEditarFila(i, campo, val, esNumero){
+ if(!horarioSemanal[i]) return;
+ horarioSemanal[i][campo] = esNumero ? parseInt(val,10) : val;
+}
+function renderHorarioFilas(){
+ const cont = el('horarioFilas'); if(!cont) return;
+ if(lastDashboardKeys.length===0){
+  cont.innerHTML = '<div class="info">Primero crea al menos un grupo; luego podrás asignarlo aquí.</div>';
+  return;
+ }
+ if(horarioSemanal.length===0){
+  cont.innerHTML = '<div class="info">Aún no agregas ninguna clase. Usa "+ Agregar clase".</div>';
+  return;
+ }
+ cont.innerHTML = horarioSemanal.map((f,i)=>{
+  const diaOpts = DIAS_SEMANA.map((d,di)=>`<option value="${di}" ${f.dia===di?'selected':''}>${d}</option>`).join('');
+  const grupoOpts = lastDashboardKeys.map(k=>`<option value="${k}" ${f.grupo===k?'selected':''}>${etiquetaGrupo(k)}</option>`).join('');
+  return `<div class="horarioFila">
+   <div><label>Día</label><select onchange="horarioEditarFila(${i},'dia',this.value,true)">${diaOpts}</select></div>
+   <div><label>Hora</label><input type="time" value="${f.hora||''}" onchange="horarioEditarFila(${i},'hora',this.value)"></div>
+   <div style="flex:1 1 220px"><label>Grupo</label><select onchange="horarioEditarFila(${i},'grupo',this.value)">${grupoOpts}</select></div>
+   <div><button type="button" onclick="horarioQuitarFila(${i})" style="background:transparent;color:#c23b3b;border:1px solid var(--line)">Quitar</button></div>
+  </div>`;
+ }).join('');
+}
+async function guardarHorarioSemanal(){
+ try{
+  await dbSet(horarioClaveEscuela(), horarioSemanal);
+  el('horarioMsg').style.display='block'; el('horarioMsg').style.borderLeftColor='#2e8b57'; el('horarioMsg').textContent='Horario guardado.';
+  cerrarHorarioModal();
+  renderHoyToca();
+ }catch(e){
+  el('horarioMsg').style.display='block'; el('horarioMsg').style.borderLeftColor='#b33'; el('horarioMsg').textContent='No se pudo guardar. Revisa tu conexión e intenta de nuevo.';
+ }
+}
+function renderHoyToca(){
+ const panel = el('hoyTocaPanel'); if(!panel) return;
+ const hoy = new Date().getDay();
+ const grupoExiste = {}; lastDashboardKeys.forEach(k=>grupoExiste[k]=true);
+ const claseHoy = (horarioSemanal||[])
+  .filter(f=>f.dia===hoy && f.grupo && grupoExiste[f.grupo])
+  .sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+ if(claseHoy.length===0){ panel.innerHTML=''; return; }
+ const ahoraHHMM = new Date().toTimeString().slice(0,5);
+ let idxEnCurso = -1;
+ claseHoy.forEach((f,i)=>{ if((f.hora||'')<=ahoraHHMM) idxEnCurso = i; });
+ panel.innerHTML = `<div class="card" style="margin-bottom:0">
+  <h2>📅 Hoy — tus clases (${DIAS_SEMANA[hoy]})</h2>
+  <div class="info">Toca una clase para abrir su grupo con la sesión de hoy lista para llenar.</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+  ${claseHoy.map((f,i)=>{
+    const kEsc = f.grupo.replace(/'/g,"\\'");
+    return `<button type="button" class="claseHoyBtn${i===idxEnCurso?' enCurso':''}" onclick="irAClaseDeHoy('${kEsc}','${f.hora||''}')">🕐 ${f.hora||'--:--'} · ${etiquetaGrupo(f.grupo)}</button>`;
+  }).join('')}
+  </div>
+ </div>`;
+}
+async function irAClaseDeHoy(key, hora){
+ const parts = key.split('_');
+ const n = parts[0], g = parts[1], grp = parts.slice(2).join('_');
+ el('nivel').value = n;
+ fillGrado();
+ el('grado').value = g;
+ updateCapac(); updateProceso();
+ el('grupoLetra').value = (grp && grp!=='general') ? grp : '';
+ updateGradoGrupo();
+ aplicarNivelFijo();
+ document.getElementById('dashboardView').style.display='none';
+ el('appWrap').style.display='block';
+ currentGroupKey = null;
+ await cargarGrupo();
+ showTab('sesion');
+ const hoyISO = new Date().toLocaleDateString('en-CA');
+ const cards = sesionCards();
+ let idx = cards.findIndex(c=>{ const fe=c.querySelector('.fecha'); return fe && fe.value===hoyISO; });
+ if(idx===-1){
+  addSesion({ fecha: hoyISO, hora: hora||'' });
+  idx = sesionCards().length-1;
+ }
+ renderSesionSelector({selectIdx: idx});
  window.scrollTo(0,0);
 }
 function volverTablero(){
