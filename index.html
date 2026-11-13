@@ -344,6 +344,7 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
   <button type="button" class="perfilOpcion" onclick="elegirPerfil('grupo')"><b>Docente frente a grupo</b><small>Primaria/secundaria, todas las materias</small></button>
   <button type="button" class="perfilOpcion" onclick="elegirPerfil('artes')"><b>Artísticas</b><small>Música, artes visuales, danza, teatro</small></button>
   <button type="button" class="perfilOpcion" onclick="elegirPerfil('cantos')"><b>Cantos y juegos (preescolar)</b><small>Educación preescolar</small></button>
+  <button type="button" class="perfilOpcion" onclick="elegirPerfil('tecnologias')"><b>Tecnologías</b><small>Talleres de Tecnología en secundaria</small></button>
  </div>
 </div>
 <div id="horarioModal" role="dialog" aria-modal="true" aria-labelledby="horarioTitulo">
@@ -847,7 +848,7 @@ async function dbSet(key, value){
  if(!userData || !userData.user) return;
  await sb.from('maid_data').upsert({ user_id: userData.user.id, storage_key: key, value: value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,storage_key' });
 }
-const PERFIL_LABELS = {ef:'Educación Física', grupo:'Docente frente a grupo', artes:'Artísticas', cantos:'Cantos y juegos (preescolar)'};
+const PERFIL_LABELS = {ef:'Educación Física', grupo:'Docente frente a grupo', artes:'Artísticas', cantos:'Cantos y juegos (preescolar)', tecnologias:'Tecnologías'};
 let perfilDocente = null;
 async function verificarPerfilDocente(){
  if(perfilDocente===null){
