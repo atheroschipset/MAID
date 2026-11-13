@@ -173,6 +173,13 @@ h1,h2,h3,.card h2,button,.tabbtn{font-family:"Barlow Condensed",Barlow,system-ui
 .btnSalud.alerta{background:#e8892b;border-color:#e8892b;color:#1d1405}
 #saludModal{display:none;position:fixed;inset:0;z-index:210;background:rgba(0,0,0,.6);align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow-y:auto}
 #saludModal .card{max-width:560px;width:100%;margin:auto 0}
+#perfilModal{display:none;position:fixed;inset:0;z-index:210;background:rgba(0,0,0,.6);align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow-y:auto}
+#perfilModal .card{max-width:480px;width:100%;margin:auto 0}
+.perfilOpcion{display:block;width:100%;text-align:left;background:transparent;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;color:var(--fg);font-size:.92rem;cursor:pointer}
+.perfilOpcion b{display:block;margin-bottom:2px}
+.perfilOpcion small{opacity:.7}
+body.perfilSinImc [data-tab="imc"]{display:none !important}
+body.perfilSinImc #tabBtnImc{display:none !important}
 #horarioModal{display:none;position:fixed;inset:0;z-index:210;background:rgba(0,0,0,.6);align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow-y:auto}
 #horarioModal .card{max-width:640px;width:100%;margin:auto 0}
 .horarioFila{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px}
@@ -280,6 +287,10 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
     <span class="cfgTxt"><b>Modo oscuro</b><small>Fondo verde oscuro, más cómodo de noche</small></span>
     <input type="checkbox" role="switch" id="swTema" class="switch">
    </label></li>
+   <li><button type="button" class="cfgFila" onclick="cerrarConfig();abrirCambiarPerfil()">
+    <span class="cfgIco"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"></path></svg></span>
+    <span class="cfgTxt"><b>Cambiar perfil docente</b><small id="perfilActualLabel"></small></span>
+   </button></li>
    <li><button type="button" class="cfgFila" onclick="cerrarConfig();descargarRespaldo()">
     <span class="cfgIco"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"></path><path d="M5 21h14"></path></svg></span>
     <span class="cfgTxt"><b>Descargar respaldo</b><small>Guarda una copia de todos tus datos en un archivo</small></span>
@@ -323,6 +334,16 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
    <button type="button" onclick="cerrarSalud()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">Cancelar</button>
    <button type="button" id="btnBorrarSalud" onclick="borrarSalud()" style="background:transparent;color:#c23b3b;border:1px solid var(--line);margin-left:auto">Borrar ficha</button>
   </div>
+ </div>
+</div>
+<div id="perfilModal" role="dialog" aria-modal="true" aria-labelledby="perfilTitulo">
+ <div class="card">
+  <h2 id="perfilTitulo">¿Cuál es tu perfil docente?</h2>
+  <div class="info">Elige con qué materia vas a usar Impulso EF. La Ficha de salud e IMC se queda exclusiva de Educación Física; lo demás (alumnos, rúbrica, asistencia, planeación) aplica para cualquier perfil. Lo puedes cambiar después desde Configuración.</div>
+  <button type="button" class="perfilOpcion" onclick="elegirPerfil('ef')"><b>Educación Física</b><small>Incluye Ficha de salud e IMC</small></button>
+  <button type="button" class="perfilOpcion" onclick="elegirPerfil('grupo')"><b>Docente frente a grupo</b><small>Primaria/secundaria, todas las materias</small></button>
+  <button type="button" class="perfilOpcion" onclick="elegirPerfil('artes')"><b>Artísticas</b><small>Música, artes visuales, danza, teatro</small></button>
+  <button type="button" class="perfilOpcion" onclick="elegirPerfil('cantos')"><b>Cantos y juegos (preescolar)</b><small>Educación preescolar</small></button>
  </div>
 </div>
 <div id="horarioModal" role="dialog" aria-modal="true" aria-labelledby="horarioTitulo">
@@ -410,7 +431,7 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <button type="button" class="tabbtn" onclick="showTab('metodologia')">3. Metodología</button>
 <button type="button" class="tabbtn" onclick="showTab('sesion')">4. Planeación <span class="tabBadge" id="badgeSesion"></span></button>
 <button type="button" class="tabbtn" onclick="showTab('alumnos')">5. Alumnos y rúbrica <span class="tabBadge" id="badgeAlumnos"></span><span class="tabBadge" id="badgeRubrica"></span></button>
-<button type="button" class="tabbtn" onclick="showTab('imc')">6. IMC <span class="tabBadge" id="badgeImc"></span></button>
+<button type="button" class="tabbtn" id="tabBtnImc" onclick="showTab('imc')">6. IMC <span class="tabBadge" id="badgeImc"></span></button>
 <button type="button" class="tabbtn" onclick="showTab('resumen')">7. Resumen</button>
 <button type="button" class="tabbtn" onclick="showTab('diario')">8. Diario de campo <span class="tabBadge" id="badgeDiario"></span></button>
 <button type="button" class="tabbtn" onclick="showTab('asistencia')">9. Asistencia <span class="tabBadge" id="badgeAsistencia"></span></button>
@@ -751,6 +772,7 @@ function abrirConfig(btn){
  el('swTema').checked = (temaActual()==='dark');
  el('configPanel').hidden = false;
  el('swTema').focus();
+ aplicarPerfilUI();
 }
 function cerrarConfig(){
  el('configPanel').hidden = true;
@@ -824,6 +846,31 @@ async function dbSet(key, value){
  const { data: userData } = await sb.auth.getUser();
  if(!userData || !userData.user) return;
  await sb.from('maid_data').upsert({ user_id: userData.user.id, storage_key: key, value: value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,storage_key' });
+}
+const PERFIL_LABELS = {ef:'Educación Física', grupo:'Docente frente a grupo', artes:'Artísticas', cantos:'Cantos y juegos (preescolar)'};
+let perfilDocente = null;
+async function verificarPerfilDocente(){
+ if(perfilDocente===null){
+  try{ perfilDocente = await dbGet('perfil'); }catch(e){ perfilDocente = null; }
+ }
+ if(!perfilDocente){
+  const pm = el('perfilModal'); if(pm) pm.style.display='flex';
+ } else {
+  aplicarPerfilUI();
+ }
+}
+async function elegirPerfil(valor){
+ perfilDocente = valor;
+ try{ await dbSet('perfil', valor); }catch(e){}
+ const pm = el('perfilModal'); if(pm) pm.style.display='none';
+ aplicarPerfilUI();
+}
+function aplicarPerfilUI(){
+ document.body.classList.toggle('perfilSinImc', !!(perfilDocente && perfilDocente!=='ef'));
+ const lbl = el('perfilActualLabel'); if(lbl) lbl.textContent = PERFIL_LABELS[perfilDocente]||'Sin elegir';
+}
+function abrirCambiarPerfil(){
+ const pm = el('perfilModal'); if(pm) pm.style.display='flex';
 }
 async function dbDeleteGroup(groupSuffix){
  const { data: userData } = await sb.auth.getUser();
@@ -2275,6 +2322,7 @@ async function mostrarSegunLicencia(){
   document.getElementById('dashboardView').style.display='none';
   const ev = el('escuelasView'); if(ev) ev.style.display='block';
   loadEscuelas();
+  verificarPerfilDocente();
  }
 }
 async function canjearLicenciaDesdeGate(){
