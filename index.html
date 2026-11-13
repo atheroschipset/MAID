@@ -180,6 +180,12 @@ h1,h2,h3,.card h2,button,.tabbtn{font-family:"Barlow Condensed",Barlow,system-ui
 .perfilOpcion small{opacity:.7}
 body.perfilSinImc [data-tab="imc"]{display:none !important}
 body.perfilSinImc #tabBtnImc{display:none !important}
+body.perfilSinImc #cardAdn,body.perfilSinImc #cardAportes{display:none !important}
+body:not(.perfilArtes) #campoExtraArtes{display:none !important}
+body:not(.perfilCantos) #campoExtraCantos{display:none !important}
+body:not(.perfilTecnologias) #campoExtraTec{display:none !important}
+body.perfilEf #cardEnfoquePerfil,body.perfilGrupo #cardEnfoquePerfil{display:none !important}
+body.perfilArtes #campoFormativo,body.perfilCantos #campoFormativo,body.perfilTecnologias #campoFormativo{pointer-events:none;opacity:.65}
 #horarioModal{display:none;position:fixed;inset:0;z-index:210;background:rgba(0,0,0,.6);align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow-y:auto}
 #horarioModal .card{max-width:640px;width:100%;margin:auto 0}
 .horarioFila{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px}
@@ -451,11 +457,11 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <label>Grado</label>
 <select id="grado"></select>
 <label>Campo formativo</label>
-<select id="campoFormativo"><option>De lo Humano y lo Comunitario</option><option>Vida saludable</option><option>Interculturalidad crítica</option><option>Inclusión</option></select>
+<select id="campoFormativo"><option>De lo Humano y lo Comunitario</option><option>Vida saludable</option><option>Interculturalidad crítica</option><option>Inclusión</option><option>Lenguajes</option></select>
 <div class="info" id="campoInfo"></div>
 </div>
 
-<div class="card" data-tab="curricular">
+<div class="card" data-tab="curricular" id="cardAdn">
 <h2>Competencia motriz en la que se incide</h2>
 <label>Elemento central (ADN de la Educación Física)</label>
 <select id="adnEl"><option>Motricidad</option><option>Corporeidad</option><option>Creatividad motriz</option></select>
@@ -464,9 +470,25 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <div class="info" id="adnInfo"></div>
 </div>
 
-<div class="card" data-tab="curricular">
+<div class="card" data-tab="curricular" id="cardAportes">
 <h2>Propuesta didáctica — aportaciones de la EF</h2>
 <select id="aportes"></select>
+</div>
+
+<div class="card" data-tab="curricular" id="cardEnfoquePerfil">
+<h2>Enfoque específico de tu perfil</h2>
+<div id="campoExtraArtes">
+<label>Disciplina artística</label>
+<select id="disciplinaArtistica"><option>Música</option><option>Artes visuales</option><option>Danza</option><option>Teatro</option></select>
+</div>
+<div id="campoExtraCantos">
+<label>Tipo de actividad</label>
+<select id="tipoActividad"><option>Canto</option><option>Juego cantado</option><option>Ronda</option><option>Juego motor con música</option></select>
+</div>
+<div id="campoExtraTec">
+<label>Proceso de Desarrollo de Aprendizaje (PDA)</label>
+<input type="text" id="pdaTec" placeholder="Ej. Diseña soluciones a problemas técnicos sencillos">
+</div>
 </div>
 
 <div class="card" data-tab="contenido">
@@ -657,7 +679,8 @@ const CAMPOS = {
  "De lo Humano y lo Comunitario":"Campo formativo propio de Educación Física. Objetos de aprendizaje: conocimiento de sí y de los demás, vida emocional y afectiva, cuidado de la salud, análisis crítico de problemas sociales, valoración y construcción de saberes.",
  "Vida saludable":"Eje articulador: se vincula con estilos de vida activos, cuidado del cuerpo, alimentación y descanso.",
  "Interculturalidad crítica":"Eje articulador: se vincula con el respeto a la diversidad cultural dentro de juegos y dinámicas grupales.",
- "Inclusión":"Eje articulador: se vincula con la participación equitativa de todas y todos sin importar sus capacidades."
+ "Inclusión":"Eje articulador: se vincula con la participación equitativa de todas y todos sin importar sus capacidades.",
+ "Lenguajes":"Campo formativo: integra Lengua Materna, Lengua Extranjera y Lenguajes Artísticos y Digitales (incluye Artes, y Cantos y juegos en preescolar). Objetos de aprendizaje: comunicación, expresión creativa y apreciación estética."
 };
 const EJES_ASP = {
  "Inclusión":["Participación equitativa de todas y todos","Adecuaciones para la diversidad funcional","Trabajo en equipos heterogéneos"],
@@ -868,7 +891,22 @@ async function elegirPerfil(valor){
 }
 function aplicarPerfilUI(){
  document.body.classList.toggle('perfilSinImc', !!(perfilDocente && perfilDocente!=='ef'));
+ const clases = ['perfilEf','perfilGrupo','perfilArtes','perfilCantos','perfilTecnologias'];
+ clases.forEach(c=>document.body.classList.remove(c));
+ const map = {ef:'perfilEf', grupo:'perfilGrupo', artes:'perfilArtes', cantos:'perfilCantos', tecnologias:'perfilTecnologias'};
+ if(perfilDocente && map[perfilDocente]) document.body.classList.add(map[perfilDocente]);
  const lbl = el('perfilActualLabel'); if(lbl) lbl.textContent = PERFIL_LABELS[perfilDocente]||'Sin elegir';
+ const CAMPO_FIJO = {artes:'Lenguajes', cantos:'Lenguajes', tecnologias:'De lo Humano y lo Comunitario'};
+ const cf = el('campoFormativo');
+ if(cf){
+  if(CAMPO_FIJO[perfilDocente]){
+   cf.value = CAMPO_FIJO[perfilDocente];
+   cf.disabled = true;
+  } else {
+   cf.disabled = false;
+  }
+  try{ fillGrado(); }catch(e){}
+ }
 }
 function abrirCambiarPerfil(){
  const pm = el('perfilModal'); if(pm) pm.style.display='flex';
