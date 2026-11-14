@@ -281,6 +281,15 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
   </div>
   <label>Código de licencia <span style="font-weight:normal;opacity:.7">(solo al crear cuenta nueva)</span></label>
   <input type="text" id="authCodigo" placeholder="Ej. MAID-2026-XXXX" autocapitalize="characters">
+  <label>Perfil docente <span style="font-weight:normal;opacity:.7">(opcional, solo al crear cuenta nueva)</span></label>
+  <select id="authPerfil">
+   <option value="">Elegir después</option>
+   <option value="ef">Educación Física</option>
+   <option value="grupo">Docente frente a grupo</option>
+   <option value="artes">Artísticas</option>
+   <option value="cantos">Cantos y juegos (preescolar)</option>
+   <option value="tecnologias">Tecnologías</option>
+  </select>
   <div class="info" id="authMsg" style="display:none"></div>
   <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
    <button type="button" onclick="authSignIn()">Iniciar sesión</button>
@@ -2355,9 +2364,11 @@ async function authSignIn(){
 async function authSignUp(){
  const codigo = el('authCodigo').value.trim();
  if(!codigo){ authMsg('Ingresa tu código de licencia para crear la cuenta.', false); return; }
+ const perfilSel = el('authPerfil') ? el('authPerfil').value : '';
  const { data, error } = await sb.auth.signUp({ email: el('authEmail').value, password: el('authPass').value });
  if(error){ authMsg(error.message, false); return; }
  if(data && data.session){
+  if(perfilSel){ try{ await elegirPerfil(perfilSel); }catch(e){} }
   const r = await sb.rpc('canjear_licencia', { p_codigo: codigo, p_device_id: getDeviceId() });
   if(r.error || !r.data || !r.data.ok){
    const motivo = r.data && r.data.motivo;
@@ -2368,6 +2379,7 @@ async function authSignUp(){
   else { authMsg('Cuenta creada y licencia activada correctamente.', true); }
  } else {
   try{ localStorage.setItem('maid_codigo_pendiente', codigo); }catch(e){}
+  if(perfilSel){ try{ localStorage.setItem('maid_perfil_pendiente', perfilSel); }catch(e){} }
   authMsg('Cuenta creada. Revisa tu correo para confirmar, luego inicia sesión para activar tu licencia.', true);
  }
 }
@@ -2438,6 +2450,12 @@ sb.auth.onAuthStateChange(async (event, session) => {
    if(codigoPend){
     const r = await conTiempoLimite(sb.rpc('canjear_licencia', { p_codigo: codigoPend, p_device_id: getDeviceId() }), 8000);
     if(!r.error && r.data && r.data.ok){ try{ localStorage.removeItem('maid_codigo_pendiente'); }catch(e){} }
+   }
+   let perfilPend = null;
+   try{ perfilPend = localStorage.getItem('maid_perfil_pendiente'); }catch(e){}
+   if(perfilPend){
+    try{ await elegirPerfil(perfilPend); }catch(e){}
+    try{ localStorage.removeItem('maid_perfil_pendiente'); }catch(e){}
    }
   }catch(e){}
   await mostrarSegunLicencia();
