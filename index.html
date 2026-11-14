@@ -201,6 +201,14 @@ body.perfilGrupo{--foto:none;--fotoBg:var(--grupo)}
 body.perfilArtes{--foto:none;--fotoBg:var(--artes)}
 body.perfilCantos{--foto:none;--fotoBg:var(--cantos)}
 body.perfilTecnologias{--foto:none;--fotoBg:var(--tec)}
+/* ===== Docente frente a grupo: tablero solo con "+ Nuevo grupo" ===== */
+body.perfilGrupo #dashboardView .hero,
+body.perfilGrupo #dashboardView [onclick="volverEscuelas()"],
+body.perfilGrupo #dashboardView [onclick="abrirHorarioModal()"],
+body.perfilGrupo #dashboardView [onclick="authSignOut()"],
+body.perfilGrupo #hoyTocaPanel,
+body.perfilGrupo #dashboardGrid,
+body.perfilGrupo #cardComparativaGrupos{display:none !important}
 .perfilOpcion.conIcono{display:flex;align-items:center;gap:12px}
 .perfilOpcion .iconoPerfil{width:42px;height:42px;border-radius:50%;overflow:hidden;flex:none;background:var(--bg);border:1px solid var(--line)}
 .perfilOpcion .iconoPerfil img{width:100%;height:100%;object-fit:cover;display:block}
@@ -434,7 +442,7 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 </div>
 <div id="hoyTocaPanel" style="margin-bottom:16px"></div>
 <div id="dashboardGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px"></div>
-<div class="card" style="margin-top:16px">
+<div class="card" style="margin-top:16px" id="cardComparativaGrupos">
 <h2>Comparativa entre grupos</h2>
 <label>Filtrar por nivel</label>
 <select id="dashCompNivel" onchange="renderComparativa()">
