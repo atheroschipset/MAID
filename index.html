@@ -186,6 +186,7 @@ body:not(.perfilCantos) #campoExtraCantos{display:none !important}
 body:not(.perfilTecnologias) #campoExtraTec{display:none !important}
 body.perfilEf #cardEnfoquePerfil,body.perfilGrupo #cardEnfoquePerfil{display:none !important}
 body.perfilArtes #campoFormativo,body.perfilCantos #campoFormativo,body.perfilTecnologias #campoFormativo{pointer-events:none;opacity:.65}
+body.perfilGrupo #campoGrupoNota{display:block !important}
 #horarioModal{display:none;position:fixed;inset:0;z-index:210;background:rgba(0,0,0,.6);align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow-y:auto}
 #horarioModal .card{max-width:640px;width:100%;margin:auto 0}
 .horarioFila{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px}
@@ -459,6 +460,7 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <label>Campo formativo</label>
 <select id="campoFormativo"><option>De lo Humano y lo Comunitario</option><option>Vida saludable</option><option>Interculturalidad crítica</option><option>Inclusión</option><option>Lenguajes</option></select>
 <div class="info" id="campoInfo"></div>
+<div class="info" id="campoGrupoNota" style="display:none">Como docente frente a grupo trabajas los 4 campos formativos; aquí eliges con cuál vas a planear esta sesión y lo puedes cambiar cuando quieras.</div>
 </div>
 
 <div class="card" data-tab="curricular" id="cardAdn">
@@ -682,6 +684,13 @@ const CAMPOS = {
  "Inclusión":"Eje articulador: se vincula con la participación equitativa de todas y todos sin importar sus capacidades.",
  "Lenguajes":"Campo formativo: integra Lengua Materna, Lengua Extranjera y Lenguajes Artísticos y Digitales (incluye Artes, y Cantos y juegos en preescolar). Objetos de aprendizaje: comunicación, expresión creativa y apreciación estética."
 };
+const CAMPOS_GRUPO = {
+ "Lenguajes":"Campo formativo (Fase 2 - Preescolar, SEP 2024): comunicación oral de necesidades y emociones, narración de historias, juegos del lenguaje, reconocimiento de la diversidad lingüística (lengua indígena, LSM, inglés), representación gráfica de ideas y apreciación/producción de expresiones artísticas.",
+ "Saberes y pensamiento científico":"Campo formativo (Fase 2 - Preescolar, SEP 2024): exploración de la diversidad natural y social mediante indagación y experimentación, saberes numéricos y espaciales, magnitudes (longitud, peso, capacidad, tiempo), clasificación de objetos y materiales, y reconocimiento de artefactos tecnológicos.",
+ "Ética, Naturaleza y Sociedades":"Campo formativo (Fase 2 - Preescolar, SEP 2024): identidad y pertenencia a la comunidad y al país, cuidado y regeneración de la naturaleza, derechos de niñas y niños, diversidad de personas y familias, y cultura de paz.",
+ "De lo Humano y lo Comunitario":"Campo formativo (Fase 2 - Preescolar, SEP 2024): construcción de la identidad personal, posibilidades de movimiento y coordinación motriz, manejo de emociones en la interacción, cuidado de la salud y la alimentación, y prevención de accidentes."
+};
+function campoInfoTexto(valor){ return (typeof perfilDocente!=='undefined' && perfilDocente==='grupo') ? CAMPOS_GRUPO[valor] : CAMPOS[valor]; }
 const EJES_ASP = {
  "Inclusión":["Participación equitativa de todas y todos","Adecuaciones para la diversidad funcional","Trabajo en equipos heterogéneos"],
  "Pensamiento crítico":["Análisis de reglas y estrategias de juego","Reflexión sobre el propio desempeño","Toma de decisiones ante dilemas del juego"],
@@ -807,7 +816,7 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !el('configPane
 aplicarTema(temaActual());
 function fillGrado(){
  const n=el('nivel').value; el('grado').innerHTML=GRADOS[n].map(g=>`<option>${g}</option>`).join('');
- el('campoInfo').textContent=CAMPOS[el('campoFormativo').value];
+ el('campoInfo').textContent=campoInfoTexto(el('campoFormativo').value);
  const lbl=CONLABELS[n];
  el('contenido').innerHTML=['m','e','s','l','i'].map(k=>`<option value="${k}">${lbl[k]}</option>`).join('');
  updateCapac();
@@ -897,13 +906,19 @@ function aplicarPerfilUI(){
  if(perfilDocente && map[perfilDocente]) document.body.classList.add(map[perfilDocente]);
  const lbl = el('perfilActualLabel'); if(lbl) lbl.textContent = PERFIL_LABELS[perfilDocente]||'Sin elegir';
  const CAMPO_FIJO = {artes:'Lenguajes', cantos:'Lenguajes', tecnologias:'De lo Humano y lo Comunitario'};
+ const CAMPO_OPCIONES_EF = ['De lo Humano y lo Comunitario','Vida saludable','Interculturalidad crítica','Inclusión','Lenguajes'];
+ const CAMPO_OPCIONES_GRUPO = ['Lenguajes','Saberes y pensamiento científico','Ética, Naturaleza y Sociedades','De lo Humano y lo Comunitario'];
  const cf = el('campoFormativo');
  if(cf){
+  const valorPrevio = cf.value;
+  const listaOpciones = perfilDocente==='grupo' ? CAMPO_OPCIONES_GRUPO : CAMPO_OPCIONES_EF;
+  cf.innerHTML = listaOpciones.map(o=>`<option>${o}</option>`).join('');
   if(CAMPO_FIJO[perfilDocente]){
    cf.value = CAMPO_FIJO[perfilDocente];
    cf.disabled = true;
   } else {
    cf.disabled = false;
+   if(listaOpciones.includes(valorPrevio)) cf.value = valorPrevio;
   }
   try{ fillGrado(); }catch(e){}
  }
@@ -951,7 +966,7 @@ function chips(containerId, items, multi){
  const c=el(containerId); c.innerHTML=items.map(x=>`<span class="chip" data-v="${x}">${x}</span>`).join('');
  c.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>ch.classList.toggle('on'));
 }
-el('campoFormativo').onchange=function(){el('campoInfo').textContent=CAMPOS[el('campoFormativo').value];};
+el('campoFormativo').onchange=function(){el('campoInfo').textContent=campoInfoTexto(el('campoFormativo').value);};
 el('ejeCat').innerHTML=Object.keys(EJES_ASP).map(e=>`<option>${e}</option>`).join('');
 function fillEje(){const c=el('ejeCat').value;el('ejeAsp').innerHTML=EJES_ASP[c].map(a=>`<option>${a}</option>`).join('');}
 el('ejeCat').onchange=fillEje; fillEje();
