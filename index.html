@@ -196,6 +196,9 @@ h1,h2,h3,.card h2,button,.tabbtn{font-family:"Barlow Condensed",Barlow,system-ui
 .perfilOpcion.gArtes{border-left:3px solid var(--artes)}
 .perfilOpcion.gCantos{border-left:3px solid var(--cantos)}
 .perfilOpcion.gTec{border-left:3px solid var(--tec)}
+.perfilOpcion.conIcono{display:flex;align-items:center;gap:12px}
+.perfilOpcion .iconoPerfil{width:42px;height:42px;border-radius:50%;overflow:hidden;flex:none;background:var(--bg);border:1px solid var(--line)}
+.perfilOpcion .iconoPerfil img{width:100%;height:100%;object-fit:cover;display:block}
 body.perfilSinImc [data-tab="imc"]{display:none !important}
 body.perfilSinImc #tabBtnImc{display:none !important}
 body.perfilSinImc #cardAdn,body.perfilSinImc #cardAportes{display:none !important}
@@ -366,7 +369,7 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
   <h2 id="perfilTitulo">¿Cuál es tu perfil docente?</h2>
   <div class="info">Elige con qué materia vas a usar Impulso EF. La Ficha de salud e IMC se queda exclusiva de Educación Física; lo demás (alumnos, rúbrica, asistencia, planeación) aplica para cualquier perfil. Lo puedes cambiar después desde Configuración.</div>
   <button type="button" class="perfilOpcion gEf" onclick="elegirPerfil('ef')"><b>Educación Física</b><small>Incluye Ficha de salud e IMC</small></button>
-  <button type="button" class="perfilOpcion gGrupo" onclick="elegirPerfil('grupo')"><b>Docente frente a grupo</b><small>Primaria/secundaria, todas las materias</small></button>
+  <button type="button" class="perfilOpcion gGrupo conIcono" onclick="elegirPerfil('grupo')"><span class="iconoPerfil"><img src="image.png" alt=""></span><span class="perfilTexto"><b>Docente frente a grupo</b><small>Primaria/secundaria, todas las materias</small></span></button>
   <button type="button" class="perfilOpcion gArtes" onclick="elegirPerfil('artes')"><b>Artísticas</b><small>Música, artes visuales, danza, teatro</small></button>
   <button type="button" class="perfilOpcion gCantos" onclick="elegirPerfil('cantos')"><b>Cantos y juegos (preescolar)</b><small>Educación preescolar</small></button>
   <button type="button" class="perfilOpcion gTec" onclick="elegirPerfil('tecnologias')"><b>Tecnologías</b><small>Talleres de Tecnología en secundaria</small></button>
