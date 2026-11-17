@@ -624,6 +624,7 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
  <div class="asisAcciones">
   <button type="button" onclick="rubricaCopiarAnterior()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">Copiar la calificación anterior</button>
   <button type="button" onclick="rubricaBorrarDia()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">Borrar este día</button>
+  <button type="button" id="btnDiaInhabilRub" onclick="toggleDiaInhabilRubrica()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🚫 Día no hábil</button>
  </div>
 </div>
 <div style="margin:10px 0">
@@ -691,6 +692,7 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
  <div class="asisAcciones">
   <button type="button" onclick="asistenciaTodos('A')">Todos asistieron</button>
   <button type="button" onclick="asistenciaBorrarDia()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">Borrar este día</button>
+  <button type="button" id="btnDiaInhabilAsis" onclick="toggleDiaInhabilAsistencia()" style="background:transparent;color:var(--accent);border:1px solid var(--line)">🚫 Día no hábil</button>
  </div>
 </div>
 <div class="asisLeyenda"><span class="asisChip A">A</span> Asistió <span class="asisChip R">R</span> Retardo <span class="asisChip F">F</span> Falta <span class="asisChip J">J</span> Justificada</div>
@@ -905,6 +907,7 @@ async function cargarGrupo(){
   return;
  }
  currentGroupKey = k;
+ await loadDiasInhabiles();
  await loadAlumnos(); await loadRubrica(); await loadImc(); await loadSesiones(); await loadAsistencia(); await loadConcentrado();
  if(typeof actualizarIndicadores==='function') actualizarIndicadores();
  if(!gruposMetaCache[k] || gruposMetaCache[k].escuela_id !== currentEscuelaId){
@@ -1443,8 +1446,8 @@ function calcAlumno(r){
 }
 function rangoTrimestres(){
  const fechas = Array.from(new Set([
-  ...Object.keys(rubricaPorFecha).filter(d=>Array.isArray(rubricaPorFecha[d])&&rubricaPorFecha[d].length),
-  ...Object.keys(asistencia).filter(d=>Array.isArray(asistencia[d])&&asistencia[d].length)
+  ...Object.keys(rubricaPorFecha).filter(d=>Array.isArray(rubricaPorFecha[d])&&rubricaPorFecha[d].length&&!esDiaInhabil(d)),
+  ...Object.keys(asistencia).filter(d=>Array.isArray(asistencia[d])&&asistencia[d].length&&!esDiaInhabil(d))
  ])).sort();
  if(!fechas.length) return null;
  const ini = new Date(fechas[0]), fin = new Date(fechas[fechas.length-1]);
@@ -1460,7 +1463,7 @@ function trimestreDeFecha(fechaStr, rangos){
  return 2;
 }
 function promedioRubricaTrimestre(i, trim, rangos){
- const fechas = Object.keys(rubricaPorFecha).filter(d=>Array.isArray(rubricaPorFecha[d])&&trimestreDeFecha(d,rangos)===trim);
+ const fechas = Object.keys(rubricaPorFecha).filter(d=>Array.isArray(rubricaPorFecha[d])&&!esDiaInhabil(d)&&trimestreDeFecha(d,rangos)===trim);
  let suma=0,n=0;
  fechas.forEach(d=>{ const c = calcAlumno((rubricaPorFecha[d]||[])[i]); if(c.prom!=null){ suma+=c.prom; n++; } });
  return n? suma/n : null;
@@ -1471,7 +1474,7 @@ function notaDe(prom){
  return Math.max(0, Math.min(10, Math.round(n*10)/10));
 }
 function inasistenciasPeriodo(i, trim, rangos){
- const fechas = Object.keys(asistencia).filter(d=>Array.isArray(asistencia[d])&&trimestreDeFecha(d,rangos)===trim);
+ const fechas = Object.keys(asistencia).filter(d=>Array.isArray(asistencia[d])&&!esDiaInhabil(d)&&trimestreDeFecha(d,rangos)===trim);
  return fechas.reduce((n,d)=> n + (asistencia[d][i]==='F' ? 1 : 0), 0);
 }
 let concentradoManual = {};
@@ -1531,6 +1534,15 @@ function actualizarFilaRubrica(i){
  row.querySelector('.rniv').textContent = c.niv;
 }
 function renderRubrica(){
+ const fRub = rubricaDia();
+ const inhabilRub = esDiaInhabil(fRub);
+ const btnIR = el('btnDiaInhabilRub');
+ if(btnIR) btnIR.textContent = inhabilRub ? '✅ Quitar "no hábil"' : '🚫 Día no hábil';
+ if(inhabilRub){
+  const tb = el('rubricaTabla');
+  if(tb) tb.innerHTML = '<tr><td style="padding:8px">📌 Este día está marcado como no hábil (no hubo clase). No se evalúa y no queda pendiente. Toca "Quitar \'no hábil\'" si fue un error.</td></tr>';
+  return;
+ }
  while(rubrica.length < alumnos.length) rubrica.push({});
  const t = el('rubricaTabla');
  const colsCriterios = criterios.map(c=>`<th>${c.label}</th>`).join('');
@@ -1913,6 +1925,29 @@ function descargarDiarioPDF(){
  doc.save('diario_campo_'+(el('gradoGrupoInfo').textContent||'grupo')+'.pdf');
 }
 
+/* ===== Dias no habiles (global, aplica a todos los grupos) ===== */
+var diasInhabiles = [];
+async function loadDiasInhabiles(){
+ diasInhabiles = (await dbGet('dias_inhabiles')) || [];
+}
+async function saveDiasInhabilesNow(){ await dbSet('dias_inhabiles', diasInhabiles); }
+const saveDiasInhabiles = debounce(saveDiasInhabilesNow, 300);
+function esDiaInhabil(f){ return !!f && diasInhabiles.includes(f); }
+function toggleDiaInhabilAsistencia(){
+ const f = asisDia(); if(!f) return;
+ const i = diasInhabiles.indexOf(f);
+ if(i>=0) diasInhabiles.splice(i,1); else diasInhabiles.push(f);
+ saveDiasInhabiles();
+ renderAsistencia();
+}
+function toggleDiaInhabilRubrica(){
+ const f = rubricaDia(); if(!f) return;
+ const i = diasInhabiles.indexOf(f);
+ if(i>=0) diasInhabiles.splice(i,1); else diasInhabiles.push(f);
+ saveDiasInhabiles();
+ renderRubrica();
+}
+
 /* ===== Asistencia ===== */
 var asistencia = {};
 var chartAsis = null;
@@ -1970,6 +2005,15 @@ function fechaCorta(d){ const [y,m,dd]=d.split('-'); return `${parseInt(dd)} ${M
 function renderAsistencia(){
  if(!el('asisLista')) return;
  const d = asisDia();
+ const inhabil = esDiaInhabil(d);
+ const btnI = el('btnDiaInhabilAsis');
+ if(btnI) btnI.textContent = inhabil ? '✅ Quitar "no hábil"' : '🚫 Día no hábil';
+ if(inhabil){
+  el('asisDiaInfo').textContent = 'Día marcado como NO hábil (asueto). No se pasa lista este día ni queda pendiente.';
+  el('asisLista').innerHTML = '<div class="info">📌 Este día está marcado como no hábil (no hubo clase). No se toma asistencia y no queda pendiente. Toca "Quitar \'no hábil\'" si fue un error.</div>';
+  if(el('asisKpis')) el('asisKpis').innerHTML = '';
+  return;
+ }
  const dia = (d && asistencia[d]) || [];
  const marcados = dia.filter(Boolean).length;
  el('asisDiaInfo').textContent = !d ? 'Elige la fecha de la clase.' : (marcados ? `${marcados} de ${alumnos.length} alumnos marcados este día. Toca de nuevo una letra para quitarla.` : 'Aún no pasas lista este día. Usa "Todos asistieron" y luego marca solo las faltas y retardos.');
