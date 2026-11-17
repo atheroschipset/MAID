@@ -1,4 +1,4 @@
-const CACHE = 'maid-nem-v32';
+const CACHE = 'maid-nem-v33';
 self.addEventListener('install', e => { self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil(
