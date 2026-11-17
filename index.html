@@ -1515,7 +1515,7 @@ function renderRubrica(){
   alumnos.map((a,i)=>{
    const r = rubrica[i]||{};
    const c = calcAlumno(r);
-   const num=(campo,val)=>`<input type="number" min="1" max="3" step="1" value="${val??''}" style="width:48px" onchange="setRub(${i},'${campo}',this.value)">`;
+   const num=(campo,val)=>`<input type="number" min="1" max="3" step="0.1" value="${val??''}" style="width:48px" onchange="setRub(${i},'${campo}',this.value)">`;
    const celdasCriterios = criterios.map(cr=>`<td style="padding:4px;text-align:center">${num(cr.id,r[cr.id])}</td>`).join('');
    return `<tr id="rrow${i}">
     <td style="padding:4px">${i+1}</td>
