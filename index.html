@@ -1442,7 +1442,10 @@ function calcAlumno(r){
  return {suma, prom, niv: nivelDe(prom)};
 }
 function rangoTrimestres(){
- const fechas = Object.keys(rubricaPorFecha).filter(d=>Array.isArray(rubricaPorFecha[d])&&rubricaPorFecha[d].length).sort();
+ const fechas = Array.from(new Set([
+  ...Object.keys(rubricaPorFecha).filter(d=>Array.isArray(rubricaPorFecha[d])&&rubricaPorFecha[d].length),
+  ...Object.keys(asistencia).filter(d=>Array.isArray(asistencia[d])&&asistencia[d].length)
+ ])).sort();
  if(!fechas.length) return null;
  const ini = new Date(fechas[0]), fin = new Date(fechas[fechas.length-1]);
  const total = fin-ini;
@@ -1467,37 +1470,57 @@ function notaDe(prom){
  const n = 5 + (prom-1)*2.5;
  return Math.max(0, Math.min(10, Math.round(n*10)/10));
 }
+function inasistenciasPeriodo(i, trim, rangos){
+ const fechas = Object.keys(asistencia).filter(d=>Array.isArray(asistencia[d])&&trimestreDeFecha(d,rangos)===trim);
+ return fechas.reduce((n,d)=> n + (asistencia[d][i]==='F' ? 1 : 0), 0);
+}
 let concentradoManual = {};
 async function loadConcentrado(){ concentradoManual = (await dbGet('concentrado_'+groupKey())) || {}; }
 async function saveConcentradoNow(){ await dbSet('concentrado_'+groupKey(), concentradoManual); }
 const saveConcentrado = debounce(saveConcentradoNow, 700);
-function setConcentrado(i, trim, val){
- const n = val===''? null : Math.max(0, Math.min(10, Number(val)));
+function concentradoCelda(i, trim){
+ const raw = concentradoManual[i] && concentradoManual[i][trim];
+ return (raw && typeof raw==='object') ? raw : {calif:(typeof raw==='number'?raw:null), rec:false, apoyo:false};
+}
+function setConcentradoCalif(i, trim, val){
  if(!concentradoManual[i]) concentradoManual[i] = {};
- if(n==null) delete concentradoManual[i][trim]; else concentradoManual[i][trim] = n;
+ const celda = concentradoCelda(i,trim);
+ celda.calif = val===''? null : Math.max(0, Math.min(10, Number(val)));
+ concentradoManual[i][trim] = celda;
  saveConcentrado();
- renderConcentrado();
+}
+function setConcentradoFlag(i, trim, campo, checked){
+ if(!concentradoManual[i]) concentradoManual[i] = {};
+ const celda = concentradoCelda(i,trim);
+ celda[campo] = !!checked;
+ concentradoManual[i][trim] = celda;
+ saveConcentrado();
 }
 function renderConcentrado(){
  const t = el('concentradoTabla');
  const rangos = rangoTrimestres();
  if(!rangos){
-  t.innerHTML = '<tr><td style="padding:8px">Aún no hay evaluaciones de la rúbrica registradas para calcular el concentrado.</td></tr>';
+  t.innerHTML = '<tr><td style="padding:8px">Aún no hay evaluaciones de rúbrica o asistencia registradas para calcular el concentrado.</td></tr>';
   return;
  }
- const header = '<tr><th style="text-align:left;padding:4px">N°</th><th style="text-align:left;padding:4px">Alumno</th><th>T1</th><th>T2</th><th>T3</th><th>Promedio final</th></tr>';
+ const periodos = ['1er. PERIODO','2do. PERIODO','3er. PERIODO'];
+ const headTop = '<tr><th rowspan="2" style="padding:4px">No.</th><th rowspan="2" style="text-align:left;padding:4px">Nombre de los Alumnos</th>' +
+  periodos.map(p=>`<th colspan="4" style="text-align:center;padding:4px">${p}</th>`).join('') + '</tr>';
+ const headSub = '<tr>' + periodos.map(()=>'<th style="padding:4px">Calificación</th><th style="padding:4px">Inasistencias</th><th style="padding:4px">Recuperación</th><th style="padding:4px">Apoyo Req.</th>').join('') + '</tr>';
  const rows = alumnos.map((a,i)=>{
-  const manual = concentradoManual[i]||{};
-  const notas = [0,1,2].map(tr=>{
-   const calc = notaDe(promedioRubricaTrimestre(i,tr,rangos));
-   return manual[tr]!=null ? manual[tr] : calc;
-  });
-  const celdas = notas.map((n,tr)=>`<td style="padding:4px;text-align:center"><input type="number" min="0" max="10" step="0.1" value="${n??''}" style="width:56px" onchange="setConcentrado(${i},${tr},this.value)"></td>`).join('');
-  const validas = notas.filter(n=>n!=null);
-  const prom = validas.length ? (validas.reduce((a,b)=>a+b,0)/validas.length).toFixed(1) : '—';
-  return `<tr><td style="padding:4px">${i+1}</td><td style="padding:4px">${escH(a.nombre||'')}</td>${celdas}<td style="padding:4px;text-align:center;font-weight:bold">${prom}</td></tr>`;
+  const celdas = [0,1,2].map(trim=>{
+   const celda = concentradoCelda(i,trim);
+   const calc = notaDe(promedioRubricaTrimestre(i,trim,rangos));
+   const calif = celda.calif!=null ? celda.calif : calc;
+   const inasis = inasistenciasPeriodo(i,trim,rangos);
+   return `<td style="padding:2px;text-align:center"><input type="number" min="0" max="10" step="0.1" value="${calif??''}" style="width:52px" onchange="setConcentradoCalif(${i},${trim},this.value)"></td>` +
+    `<td style="padding:2px;text-align:center">${inasis}</td>` +
+    `<td style="padding:2px;text-align:center"><input type="checkbox" ${celda.rec?'checked':''} onchange="setConcentradoFlag(${i},${trim},'rec',this.checked)"></td>` +
+    `<td style="padding:2px;text-align:center"><input type="checkbox" ${celda.apoyo?'checked':''} onchange="setConcentradoFlag(${i},${trim},'apoyo',this.checked)"></td>`;
+  }).join('');
+  return `<tr><td style="padding:4px">${i+1}</td><td style="padding:4px;text-align:left">${escH(a.nombre||'')}</td>${celdas}</tr>`;
  }).join('');
- t.innerHTML = header + rows;
+ t.innerHTML = headTop + headSub + rows;
 }
 function actualizarFilaRubrica(i){
  const c = calcAlumno(rubrica[i]);
