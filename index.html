@@ -479,8 +479,16 @@ select:focus,textarea:focus,input:focus{outline:3px solid color-mix(in srgb,var(
 <button type="button" class="tabbtn" onclick="showTab('resumen')">7. Resumen</button>
 <button type="button" class="tabbtn" onclick="showTab('diario')">8. Diario de campo <span class="tabBadge" id="badgeDiario"></span></button>
 <button type="button" class="tabbtn" onclick="showTab('asistencia')">9. Asistencia <span class="tabBadge" id="badgeAsistencia"></span></button>
+<button type="button" class="tabbtn" onclick="showTab('concentrado')">10. Concentrado <span class="tabBadge" id="badgeConcentrado"></span></button>
 </div>
 
+<div class="card" data-tab="concentrado">
+<h2>10. Concentrado de calificaciones</h2>
+<div class="info">Calificación por trimestre calculada a partir del promedio de la rúbrica (Lente MAID) en ese periodo (escala 1-3 convertida a 0-10). Puedes ajustar cualquier valor a mano.</div>
+<div style="overflow-x:auto;margin-top:10px">
+<table id="concentradoTabla" style="width:100%;border-collapse:collapse"></table>
+</div>
+</div>
 <div class="card" data-tab="curricular">
 <h2>1. Ubicación curricular</h2>
 <div id="nivelSelectorWrap">
@@ -897,7 +905,7 @@ async function cargarGrupo(){
   return;
  }
  currentGroupKey = k;
- await loadAlumnos(); await loadRubrica(); await loadImc(); await loadSesiones(); await loadAsistencia();
+ await loadAlumnos(); await loadRubrica(); await loadImc(); await loadSesiones(); await loadAsistencia(); await loadConcentrado();
  if(typeof actualizarIndicadores==='function') actualizarIndicadores();
  if(!gruposMetaCache[k] || gruposMetaCache[k].escuela_id !== currentEscuelaId){
   if(currentEscuelaId) guardarMetaGrupo(k, { escuela_id: currentEscuelaId });
@@ -1432,6 +1440,64 @@ function calcAlumno(r){
  const suma = criterios.reduce((a,c)=>a+r[c.id],0);
  const prom = suma/criterios.length;
  return {suma, prom, niv: nivelDe(prom)};
+}
+function rangoTrimestres(){
+ const fechas = Object.keys(rubricaPorFecha).filter(d=>Array.isArray(rubricaPorFecha[d])&&rubricaPorFecha[d].length).sort();
+ if(!fechas.length) return null;
+ const ini = new Date(fechas[0]), fin = new Date(fechas[fechas.length-1]);
+ const total = fin-ini;
+ const corte1 = new Date(ini.getTime()+total/3);
+ const corte2 = new Date(ini.getTime()+2*total/3);
+ return {ini,fin,corte1,corte2};
+}
+function trimestreDeFecha(fechaStr, rangos){
+ const f = new Date(fechaStr);
+ if(f<=rangos.corte1) return 0;
+ if(f<=rangos.corte2) return 1;
+ return 2;
+}
+function promedioRubricaTrimestre(i, trim, rangos){
+ const fechas = Object.keys(rubricaPorFecha).filter(d=>Array.isArray(rubricaPorFecha[d])&&trimestreDeFecha(d,rangos)===trim);
+ let suma=0,n=0;
+ fechas.forEach(d=>{ const c = calcAlumno((rubricaPorFecha[d]||[])[i]); if(c.prom!=null){ suma+=c.prom; n++; } });
+ return n? suma/n : null;
+}
+function notaDe(prom){
+ if(prom==null) return null;
+ const n = 5 + (prom-1)*2.5;
+ return Math.max(0, Math.min(10, Math.round(n*10)/10));
+}
+let concentradoManual = {};
+async function loadConcentrado(){ concentradoManual = (await dbGet('concentrado_'+groupKey())) || {}; }
+async function saveConcentradoNow(){ await dbSet('concentrado_'+groupKey(), concentradoManual); }
+const saveConcentrado = debounce(saveConcentradoNow, 700);
+function setConcentrado(i, trim, val){
+ const n = val===''? null : Math.max(0, Math.min(10, Number(val)));
+ if(!concentradoManual[i]) concentradoManual[i] = {};
+ if(n==null) delete concentradoManual[i][trim]; else concentradoManual[i][trim] = n;
+ saveConcentrado();
+ renderConcentrado();
+}
+function renderConcentrado(){
+ const t = el('concentradoTabla');
+ const rangos = rangoTrimestres();
+ if(!rangos){
+  t.innerHTML = '<tr><td style="padding:8px">Aún no hay evaluaciones de la rúbrica registradas para calcular el concentrado.</td></tr>';
+  return;
+ }
+ const header = '<tr><th style="text-align:left;padding:4px">N°</th><th style="text-align:left;padding:4px">Alumno</th><th>T1</th><th>T2</th><th>T3</th><th>Promedio final</th></tr>';
+ const rows = alumnos.map((a,i)=>{
+  const manual = concentradoManual[i]||{};
+  const notas = [0,1,2].map(tr=>{
+   const calc = notaDe(promedioRubricaTrimestre(i,tr,rangos));
+   return manual[tr]!=null ? manual[tr] : calc;
+  });
+  const celdas = notas.map((n,tr)=>`<td style="padding:4px;text-align:center"><input type="number" min="0" max="10" step="0.1" value="${n??''}" style="width:56px" onchange="setConcentrado(${i},${tr},this.value)"></td>`).join('');
+  const validas = notas.filter(n=>n!=null);
+  const prom = validas.length ? (validas.reduce((a,b)=>a+b,0)/validas.length).toFixed(1) : '—';
+  return `<tr><td style="padding:4px">${i+1}</td><td style="padding:4px">${escH(a.nombre||'')}</td>${celdas}<td style="padding:4px;text-align:center;font-weight:bold">${prom}</td></tr>`;
+ }).join('');
+ t.innerHTML = header + rows;
 }
 function actualizarFilaRubrica(i){
  const c = calcAlumno(rubrica[i]);
@@ -2330,11 +2396,12 @@ function volverTablero(){
 function showTab(name){
  document.querySelectorAll('[data-tab]').forEach(elm=>elm.classList.toggle('tab-active', elm.dataset.tab===name));
  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('on'));
- const idx = ['curricular','contenido','metodologia','sesion','alumnos','imc','resumen','diario','asistencia'].indexOf(name);
+ const idx = ['curricular','contenido','metodologia','sesion','alumnos','imc','resumen','diario','asistencia','concentrado'].indexOf(name);
  const btns = document.querySelectorAll('.tabbtn');
  if(btns[idx]) btns[idx].classList.add('on');
  if(name==='diario' && typeof renderDiario==='function') renderDiario();
  if(name==='asistencia' && typeof renderAsistencia==='function') renderAsistencia();
+ if(name==='concentrado' && typeof renderConcentrado==='function') renderConcentrado();
  if(name==='sesion' && typeof renderSesionSelector==='function') renderSesionSelector();
  window.scrollTo(0,0);
 }
