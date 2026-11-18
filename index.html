@@ -1366,7 +1366,7 @@ async function loadRubrica(){
  }
  criterios = (await dbGet('criterios_'+groupKey())) || CRITERIOS_DEFECTO.map(c=>({...c}));
  const f = el('rubricaFecha');
- if(f && !f.value) f.value = new Date().toLocaleDateString('en-CA');
+ if(f) f.value = new Date().toLocaleDateString('en-CA');
  rubrica = rubricaPorFecha[rubricaDia()] || [];
  renderCriteriosChips();
  renderRubrica();
@@ -1954,7 +1954,7 @@ var chartAsis = null;
 const ASIS_CODES = ['A','R','F','J'];
 async function loadAsistencia(){
  asistencia = (await dbGet('asistencia_'+groupKey())) || {};
- const f = el('asisFecha'); if(f && !f.value) f.value = new Date().toLocaleDateString('en-CA');
+ const f = el('asisFecha'); if(f) f.value = new Date().toLocaleDateString('en-CA');
  if(document.querySelector('[data-tab="asistencia"].tab-active')) renderAsistencia();
  actualizarIndicadores();
 }
