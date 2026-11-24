@@ -1499,6 +1499,75 @@ function setConcentradoFlag(i, trim, campo, checked){
  concentradoManual[i][trim] = celda;
  saveConcentrado();
 }
+function reporteIndividual(i){
+ const a = alumnos[i]; if(!a) return;
+ const rangos = rangoTrimestres();
+ if(!rangos){ alert('Aún no hay evaluaciones de rúbrica o asistencia registradas para generar el reporte.'); return; }
+ const periodos = ['1er. Periodo','2do. Periodo','3er. Periodo'];
+ const filas = [0,1,2].map(trim=>{
+  const celda = concentradoCelda(i,trim);
+  const calc = notaDe(promedioRubricaTrimestre(i,trim,rangos));
+  const calif = celda.calif!=null ? celda.calif : calc;
+  const inasis = inasistenciasPeriodo(i,trim,rangos);
+  return {periodo:periodos[trim], calif, inasis, rec:!!celda.rec, apoyo:!!celda.apoyo};
+ });
+ const califsVal = filas.map(f=>f.calif).filter(v=>v!=null);
+ const promGeneral = califsVal.length ? (califsVal.reduce((x,y)=>x+y,0)/califsVal.length) : null;
+ const totalInasis = filas.reduce((x,f)=>x+(f.inasis||0),0);
+ const d = datosInstitucionales();
+ const hoy = new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});
+ const filasHtml = filas.map(f=>`<tr>
+  <td>${escH(f.periodo)}</td>
+  <td style="text-align:center">${f.calif!=null?f.calif.toFixed(1):'—'}</td>
+  <td style="text-align:center">${f.inasis}</td>
+  <td style="text-align:center">${f.rec?'Sí':'No'}</td>
+  <td style="text-align:center">${f.apoyo?'Sí':'No'}</td>
+ </tr>`).join('');
+ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Reporte - ${escH(a.nombre||'')}</title>
+ <style>
+  body{font-family:Arial,Helvetica,sans-serif;color:#222;margin:32px}
+  h1{font-size:18px;margin:0 0 4px}
+  h2{font-size:14px;margin:0 0 16px;color:#555;font-weight:normal}
+  .datos{font-size:13px;line-height:1.6;margin-bottom:18px}
+  .datos b{display:inline-block;min-width:170px}
+  table{width:100%;border-collapse:collapse;margin-bottom:18px}
+  th,td{border:1px solid #aaa;padding:6px 8px;font-size:13px}
+  th{background:#f0f0f0;text-align:left}
+  .resumen{display:flex;gap:24px;margin-bottom:18px}
+  .resumen div{border:1px solid #aaa;border-radius:6px;padding:10px 16px;text-align:center}
+  .resumen b{display:block;font-size:20px}
+  .firma{margin-top:60px;display:flex;justify-content:space-between}
+  .firma div{width:45%;text-align:center;border-top:1px solid #444;padding-top:6px;font-size:12px}
+  @media print{ body{margin:12mm} .noPrint{display:none} }
+ </style></head><body>
+ <h1>Reporte Individual del Alumno — Educación Física</h1>
+ <h2>Generado el ${escH(hoy)}</h2>
+ <div class="datos">
+  <div><b>Alumno:</b> ${escH(a.nombre||'')}</div>
+  <div><b>Grado y grupo:</b> ${escH(d.gradoGrupo||'—')}</div>
+  <div><b>Escuela:</b> ${escH(d.escuela||'(sin registrar)')}</div>
+  <div><b>CCT:</b> ${escH(d.cct||'(sin registrar)')}</div>
+  <div><b>Docente de Educación Física:</b> ${escH(d.docente||'(sin registrar)')}</div>
+ </div>
+ <table>
+  <tr><th>Periodo</th><th>Calificación</th><th>Inasistencias</th><th>Recuperación</th><th>Apoyo requerido</th></tr>
+  ${filasHtml}
+ </table>
+ <div class="resumen">
+  <div>Promedio general<b>${promGeneral!=null?promGeneral.toFixed(1):'—'}</b></div>
+  <div>Inasistencias totales<b>${totalInasis}</b></div>
+ </div>
+ <div style="font-size:12px;color:#666;margin-bottom:40px">Observaciones:</div>
+ <div class="firma">
+  <div>Firma del docente</div>
+  <div>Firma del padre/madre/tutor</div>
+ </div>
+ <div class="noPrint" style="text-align:center;margin-top:24px"><button onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button></div>
+ </body></html>`;
+ const w = window.open('', '_blank');
+ if(!w){ alert('El navegador bloqueó la ventana del reporte. Permite las ventanas emergentes para generar el reporte.'); return; }
+ w.document.open(); w.document.write(html); w.document.close();
+}
 function renderConcentrado(){
  const t = el('concentradoTabla');
  const rangos = rangoTrimestres();
@@ -1507,7 +1576,7 @@ function renderConcentrado(){
   return;
  }
  const periodos = ['1er. PERIODO','2do. PERIODO','3er. PERIODO'];
- const headTop = '<tr><th rowspan="2" style="padding:4px">No.</th><th rowspan="2" style="text-align:left;padding:4px">Nombre de los Alumnos</th>' +
+ const headTop = '<tr><th rowspan="2" style="padding:4px">No.</th><th rowspan="2" style="text-align:left;padding:4px">Nombre de los Alumnos</th><th rowspan="2" style="padding:4px">Reporte</th>' +
   periodos.map(p=>`<th colspan="4" style="text-align:center;padding:4px">${p}</th>`).join('') + '</tr>';
  const headSub = '<tr>' + periodos.map(()=>'<th style="padding:4px">Calificación</th><th style="padding:4px">Inasistencias</th><th style="padding:4px">Recuperación</th><th style="padding:4px">Apoyo Req.</th>').join('') + '</tr>';
  const rows = alumnos.map((a,i)=>{
@@ -1521,7 +1590,7 @@ function renderConcentrado(){
     `<td style="padding:2px;text-align:center"><input type="checkbox" ${celda.rec?'checked':''} onchange="setConcentradoFlag(${i},${trim},'rec',this.checked)"></td>` +
     `<td style="padding:2px;text-align:center"><input type="checkbox" ${celda.apoyo?'checked':''} onchange="setConcentradoFlag(${i},${trim},'apoyo',this.checked)"></td>`;
   }).join('');
-  return `<tr><td style="padding:4px">${i+1}</td><td style="padding:4px;text-align:left">${escH(a.nombre||'')}</td>${celdas}</tr>`;
+  return `<tr><td style="padding:4px">${i+1}</td><td style="padding:4px;text-align:left">${escH(a.nombre||'')}</td><td style="padding:2px;text-align:center"><button type="button" onclick="reporteIndividual(${i})" style="font-size:12px" title="Generar reporte individual del alumno">📄 Reporte</button></td>${celdas}</tr>`;
  }).join('');
  t.innerHTML = headTop + headSub + rows;
 }
